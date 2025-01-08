@@ -1,0 +1,81 @@
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.partner-logo-container {
+  display: inline-block;
+}
+
+.partner-logo-container:hover .partner-logo {
+  animation: bounce 0.5s ease infinite;
+}
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.animate-on-scroll.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-in-left {
+  transform: translateX(-100px);
+}
+
+.slide-in-right {
+  transform: translateX(100px);
+}
+
+.slide-in-bottom {
+  transform: translateY(100px);
+}
+
+.slide-in-left.animate-in,
+.slide-in-right.animate-in,
+.slide-in-bottom.animate-in {
+  transform: translate(0);
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.fade-in {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-in.animate-in {
+  opacity: 1;
+}
+
+.scale-in {
+  transform: scale(0.9);
+  opacity: 0;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+.scale-in.animate-in {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.rotate-in {
+  transform: rotate(-10deg);
+  opacity: 0;
+  transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+.rotate-in.animate-in {
+  transform: rotate(0);
+  opacity: 1;
+}
+
