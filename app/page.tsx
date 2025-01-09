@@ -301,8 +301,9 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section className="features py-24 bg-gradient-to-b from-gray-50 to-gray-100" ref={ref}>
-          <div className="container mx-auto px-4">
+        <section className="features py-24 bg-gradient-to-b from-gray-50/50 to-gray-100/50 backdrop-blur-md relative" ref={ref}>
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px] z-0"></div>
+          <div className="container mx-auto px-4 relative z-10">
             <motion.div
               initial={{ opacity: 0, x: -100 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -359,7 +360,7 @@ export default function Home() {
               ].map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="feature-card bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300"
+                  className="feature-card bg-white/70 backdrop-blur-lg p-8 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/20"
                   initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -370,7 +371,7 @@ export default function Home() {
                   }}
                 >
                   <motion.div 
-                    className={`inline-block p-4 rounded-full bg-gradient-to-r ${feature.gradient} mb-6`}
+                    className={`inline-block p-4 rounded-full bg-gradient-to-r ${feature.gradient} mb-6 backdrop-blur-xl`}
                     whileHover={{ rotate: 360 }}
                     transition={{ duration: 0.6 }}
                   >

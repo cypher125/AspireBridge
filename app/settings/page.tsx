@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { toast } from "@/components/ui/use-toast"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "@/hooks/use-toast"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion } from 'framer-motion'
-import { Lock, Bell, Moon, Sun } from 'lucide-react'
-import { GradientBackground } from '../../components/GradientBackground'
+import { Lock, Bell, Moon, Sun, User as UserIcon, Settings as SettingsIcon } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function Settings() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -32,7 +32,6 @@ export default function Settings() {
       router.push('/login')
     }
 
-    // Check for dark mode preference
     if (typeof window !== 'undefined') {
       setIsDarkMode(localStorage.theme === 'dark')
     }
@@ -81,116 +80,154 @@ export default function Settings() {
   }
 
   if (!currentUser) {
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
     <>
       <Header />
-      <GradientBackground />
-      <motion.main 
-        className="container mx-auto px-4 py-16"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.h1 
-          className="text-3xl font-bold mb-8"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          Settings
-        </motion.h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-8">
           <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-4xl mx-auto"
           >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Lock className="mr-2" />
-                  Change Password
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div>
-                    <Label htmlFor="oldPassword">Current Password</Label>
-                    <Input
-                      id="oldPassword"
-                      type="password"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit">Change Password</Button>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferences</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {isDarkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                    <Label htmlFor="darkMode">Dark Mode</Label>
-                  </div>
-                  <Switch
-                    id="darkMode"
-                    checked={isDarkMode}
-                    onCheckedChange={toggleDarkMode}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Bell className="h-4 w-4" />
-                    <Label htmlFor="emailNotifications">Email Notifications</Label>
-                  </div>
-                  <Switch
-                    id="emailNotifications"
-                    checked={emailNotifications}
-                    onCheckedChange={toggleEmailNotifications}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-4 mb-8">
+              <SettingsIcon className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">Account Settings</h1>
+            </div>
+
+            <Tabs defaultValue="profile" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="profile">Profile & Security</TabsTrigger>
+                <TabsTrigger value="preferences">Preferences</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="profile">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserIcon className="h-5 w-5" />
+                      Profile Information
+                    </CardTitle>
+                    <CardDescription>
+                      View and manage your account details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4">
+                      <div>
+                        <Label>Name</Label>
+                        <Input value={currentUser.name} disabled />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input value={currentUser.email} disabled />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lock className="h-5 w-5" />
+                      Security
+                    </CardTitle>
+                    <CardDescription>
+                      Change your password
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleChangePassword} className="space-y-4">
+                      <div>
+                        <Label htmlFor="oldPassword">Current Password</Label>
+                        <Input
+                          id="oldPassword"
+                          type="password"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="newPassword">New Password</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Update Password</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="preferences">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Application Preferences</CardTitle>
+                    <CardDescription>
+                      Customize your experience
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                        <div>
+                          <Label htmlFor="darkMode" className="font-medium">Dark Mode</Label>
+                          <p className="text-sm text-gray-500">Adjust the appearance</p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="darkMode"
+                        checked={isDarkMode}
+                        onCheckedChange={toggleDarkMode}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Bell className="h-5 w-5" />
+                        <div>
+                          <Label htmlFor="emailNotifications" className="font-medium">Email Notifications</Label>
+                          <p className="text-sm text-gray-500">Receive updates about opportunities</p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="emailNotifications"
+                        checked={emailNotifications}
+                        onCheckedChange={toggleEmailNotifications}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </div>
-      </motion.main>
+      </main>
       <Footer />
     </>
   )
 }
-

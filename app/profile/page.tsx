@@ -12,10 +12,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserIcon, Mail, Book, Phone, FileText, Camera } from 'lucide-react'
-import { GradientBackground } from '../../components/GradientBackground'
+import { UserIcon, Mail, Book, Phone, FileText, Camera, MapPin, Calendar, Briefcase, School } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -49,8 +50,6 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (editedUser) {
-      // In a real application, you would upload the new profile picture here
-      // and get back a URL to store in the user object
       if (newProfilePicture) {
         editedUser.profilePicture = URL.createObjectURL(newProfilePicture)
       }
@@ -66,194 +65,227 @@ export default function Profile() {
   }
 
   if (!currentUser) {
-    return <div>Loading...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      <GradientBackground />
       <motion.main 
-        className="container mx-auto px-4 py-16"
+        className="container mx-auto px-4 py-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <motion.h1 
-          className="text-3xl font-bold mb-8"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          Your Profile
-        </motion.h1>
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="w-32 h-32 mb-4">
-                <AvatarImage src={currentUser.profilePicture || undefined} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              {isEditing && (
-                <Label htmlFor="profilePicture" className="cursor-pointer">
-                  <Input
-                    id="profilePicture"
-                    type="file"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <div className="flex items-center justify-center w-full">
-                    <Button variant="outline">
-                      <Camera className="mr-2 h-4 w-4" />
-                      Change Picture
-                    </Button>
-                  </div>
-                </Label>
+        <div className="max-w-7xl mx-auto">
+          <motion.div 
+            className="flex items-center justify-between mb-8"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-4xl font-bold text-gray-900">Profile Dashboard</h1>
+            {!isEditing && (
+              <Button onClick={() => setIsEditing(true)} className="bg-primary hover:bg-primary/90">
+                <UserIcon className="mr-2 h-4 w-4" />
+                Edit Profile
+              </Button>
+            )}
+          </motion.div>
+
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="bg-white/50 backdrop-blur-sm">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="details">Personal Details</TabsTrigger>
+              {currentUser.role === 'student' && (
+                <TabsTrigger value="academic">Academic Info</TabsTrigger>
               )}
-            </CardContent>
-          </Card>
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="flex items-center">
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={editedUser?.name || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    value={editedUser?.email || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                {currentUser.role === 'student' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="matriculationNumber" className="flex items-center">
-                        <Book className="mr-2 h-4 w-4" />
-                        Matriculation Number
+            </TabsList>
+
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="col-span-1">
+                  <CardHeader>
+                    <CardTitle>Profile Picture</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <Avatar className="w-40 h-40 mb-6">
+                      <AvatarImage src={currentUser.profilePicture || undefined} alt={currentUser.name} />
+                      <AvatarFallback className="text-2xl">{currentUser.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {isEditing && (
+                      <Label htmlFor="profilePicture" className="cursor-pointer">
+                        <Input
+                          id="profilePicture"
+                          type="file"
+                          onChange={handleFileChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <Button variant="outline" className="w-full">
+                          <Camera className="mr-2 h-4 w-4" />
+                          Change Picture
+                        </Button>
                       </Label>
-                      <Input
-                        id="matriculationNumber"
-                        name="matriculationNumber"
-                        value={editedUser?.matriculationNumber || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                      />
+                    )}
+                    <div className="mt-6 w-full">
+                      <h3 className="text-xl font-semibold text-center mb-2">{currentUser.name}</h3>
+                      <Badge variant="outline" className="w-full justify-center">
+                        {currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
+                      </Badge>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="course" className="flex items-center">
-                        <Book className="mr-2 h-4 w-4" />
-                        Course
-                      </Label>
-                      <Input
-                        id="course"
-                        name="course"
-                        value={editedUser?.course || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                      />
+                  </CardContent>
+                </Card>
+
+                <Card className="col-span-2">
+                  <CardHeader>
+                    <CardTitle>Quick Information</CardTitle>
+                    <CardDescription>Overview of your profile details</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Mail className="h-5 w-5 text-gray-500" />
+                        <span>{currentUser.email}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-5 w-5 text-gray-500" />
+                        <span>{currentUser.phoneNumber || 'Not provided'}</span>
+                      </div>
+                      {currentUser.role === 'student' && (
+                        <>
+                          <div className="flex items-center space-x-3">
+                            <School className="h-5 w-5 text-gray-500" />
+                            <span>{currentUser.course}</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <Book className="h-5 w-5 text-gray-500" />
+                            <span>{currentUser.matriculationNumber}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </>
-                )}
-                {currentUser.role === 'admin' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="organizationDetails" className="flex items-center">
-                      <FileText className="mr-2 h-4 w-4" />
-                      Organization Details
-                    </Label>
-                    <Textarea
-                      id="organizationDetails"
-                      name="organizationDetails"
-                      value={editedUser?.organizationDetails || ''}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="flex items-center">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={editedUser?.description || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber" className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    value={editedUser?.phoneNumber || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <AnimatePresence>
-                  {isEditing ? (
-                    <motion.div
-                      className="flex space-x-4"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Button type="submit">Save Changes</Button>
-                      <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Button type="button" onClick={() => setIsEditing(true)}>Edit Profile</Button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    <div className="space-y-4">
+                      {currentUser.role === 'admin' && (
+                        <div className="flex items-start space-x-3">
+                          <Briefcase className="h-5 w-5 text-gray-500 mt-1" />
+                          <span>{currentUser.organizationDetails}</span>
+                        </div>
+                      )}
+                      <div className="flex items-start space-x-3">
+                        <FileText className="h-5 w-5 text-gray-500 mt-1" />
+                        <span>{currentUser.description || 'No description provided'}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="details">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>Manage your personal details</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Form fields from original code */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                          id="name"
+                          name="name"
+                          value={editedUser?.name || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          value={editedUser?.email || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phoneNumber">Phone Number</Label>
+                        <Input
+                          id="phoneNumber"
+                          name="phoneNumber"
+                          value={editedUser?.phoneNumber || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={editedUser?.description || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+                    {isEditing && (
+                      <div className="flex space-x-4">
+                        <Button type="submit">Save Changes</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                      </div>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {currentUser.role === 'student' && (
+              <TabsContent value="academic">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Academic Information</CardTitle>
+                    <CardDescription>Your academic details and progress</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="matriculationNumber">Matriculation Number</Label>
+                        <Input
+                          id="matriculationNumber"
+                          name="matriculationNumber"
+                          value={editedUser?.matriculationNumber || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="course">Course</Label>
+                        <Input
+                          id="course"
+                          name="course"
+                          value={editedUser?.course || ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+          </Tabs>
+        </div>
       </motion.main>
       <Footer />
-    </>
+    </div>
   )
 }
-

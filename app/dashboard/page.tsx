@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Bell, ChevronRight, Briefcase, GraduationCap, BookOpen, Gift, Calendar, Award, Clock, Target, Users, TrendingUp, MapPin, DollarSign, Calendar as CalendarIcon } from 'lucide-react'
+import { Search, Bell, ChevronRight, Briefcase, GraduationCap, BookOpen, Gift, Calendar, Award, Clock, Target, Users, TrendingUp, MapPin, DollarSign, Calendar as CalendarIcon, Menu } from 'lucide-react'
 import CountUp from 'react-countup'
 import { format } from 'date-fns'
 
@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<Opportunity[]>([])
   const [trendingOpportunities, setTrendingOpportunities] = useState<Opportunity[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   const router = useRouter()
 
   const fetchNotifications = useCallback(() => {
@@ -97,6 +98,7 @@ export default function Dashboard() {
   const handleFilterChange = (type: 'all' | 'job' | 'scholarship' | 'internship' | 'grant') => {
     setFilterType(type)
     setCurrentPage(1)
+    setShowMobileFilters(false)
   }
 
   const handleNotificationRead = (notificationId: string) => {
@@ -128,12 +130,12 @@ export default function Dashboard() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-96">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="w-full max-w-md">
           <CardContent className="text-center py-12">
             <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 mb-4">Please log in to access your dashboard</p>
-            <Button onClick={() => router.push('/login')}>Go to Login</Button>
+            <Button onClick={() => router.push('/login')} className="w-full">Go to Login</Button>
           </CardContent>
         </Card>
       </div>
@@ -145,19 +147,19 @@ export default function Dashboard() {
       <Header />
       <GradientBackground />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-7xl mx-auto">
           {/* Welcome Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <h1 className="text-4xl font-bold text-gray-900">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
               Welcome back, <span className="text-primary">{currentUser?.name}</span>
             </h1>
             <p className="text-gray-600 mt-2">Your personalized opportunity dashboard awaits</p>
-            <div className="mt-4 flex items-center space-x-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Badge variant="outline" className="text-sm">
                 <Users className="mr-1 h-4 w-4" />
                 {currentUser?.role}
@@ -176,29 +178,29 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <StatsCard
               title="Active Applications"
               value={applications.length}
-              icon={<Briefcase className="h-8 w-8 text-primary" />}
+              icon={<Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />}
               description="Applications in progress"
             />
             <StatsCard
               title="Available Opportunities"
               value={opportunities.length}
-              icon={<Gift className="h-8 w-8 text-primary" />}
+              icon={<Gift className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />}
               description="Open positions"
             />
             <StatsCard
               title="Unread Notifications"
               value={notifications.filter(n => !n.read).length}
-              icon={<Bell className="h-8 w-8 text-primary" />}
+              icon={<Bell className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />}
               description="New updates"
             />
             <StatsCard
               title="Success Rate"
               value={Math.round((applications.filter(a => a.status === 'Accepted').length / applications.length) * 100) || 0}
-              icon={<TrendingUp className="h-8 w-8 text-primary" />}
+              icon={<TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />}
               description="Application success"
               suffix="%"
             />
@@ -211,22 +213,22 @@ export default function Dashboard() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-8"
+                className="mb-6 sm:mb-8"
               >
                 <Card className="bg-white/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-xl">
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center text-lg sm:text-xl">
                       <Bell className="mr-2 h-5 w-5 text-primary" />
                       Recent Notifications
                     </CardTitle>
-                    <CardDescription>Stay updated with the latest opportunities and updates</CardDescription>
+                    <CardDescription>Stay updated with the latest opportunities</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6">
                     <div className="space-y-2">
                       {notifications.map(notification => (
                         <motion.div
                           key={notification.id}
-                          className={`p-4 rounded-lg transition-all ${
+                          className={`p-3 sm:p-4 rounded-lg transition-all ${
                             notification.read ? 'bg-gray-50' : 'bg-blue-50'
                           }`}
                           whileHover={{ scale: 1.01 }}
@@ -234,8 +236,8 @@ export default function Dashboard() {
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="text-gray-800 font-medium">{notification.message}</p>
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm sm:text-base text-gray-800 font-medium">{notification.message}</p>
+                              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                                 {format(new Date(notification.timestamp), 'MMM d, yyyy • h:mm a')}
                               </p>
                             </div>
@@ -257,16 +259,16 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
+              className="mb-6 sm:mb-8"
             >
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Recommended For You</h2>
-                  <p className="text-gray-600">Personalized opportunities based on your profile</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Recommended For You</h2>
+                  <p className="text-sm sm:text-base text-gray-600">Personalized opportunities</p>
                 </div>
-                <Button variant="outline">View All</Button>
+                <Button variant="outline" size="sm" className="hidden sm:flex">View All</Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {recommendedOpportunities.map((opportunity) => (
                   <OpportunityCard key={opportunity.id} opportunity={opportunity} />
                 ))}
@@ -279,16 +281,16 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
+              className="mb-6 sm:mb-8"
             >
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Upcoming Deadlines</h2>
-                  <p className="text-gray-600">Don't miss these closing opportunities</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Upcoming Deadlines</h2>
+                  <p className="text-sm sm:text-base text-gray-600">Don't miss these opportunities</p>
                 </div>
-                <Button variant="outline">View Calendar</Button>
+                <Button variant="outline" size="sm" className="hidden sm:flex">View Calendar</Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {upcomingDeadlines.map((opportunity) => (
                   <OpportunityCard key={opportunity.id} opportunity={opportunity} showDeadline />
                 ))}
@@ -300,25 +302,61 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Explore Opportunities</h2>
-                <p className="text-gray-600">Discover and apply to opportunities that match your interests</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Explore Opportunities</h2>
+                <p className="text-sm sm:text-base text-gray-600">Discover and apply to opportunities</p>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
+              <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <div className="relative flex-grow sm:flex-grow-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Search opportunities..."
                     value={searchTerm}
                     onChange={handleSearch}
-                    className="pl-10 w-64"
+                    className="pl-10 w-full sm:w-64"
                   />
                 </div>
-                <div className="flex space-x-2">
+                
+                {/* Mobile Filter Button */}
+                <Button 
+                  variant="outline" 
+                  className="sm:hidden w-full"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                >
+                  <Menu className="mr-2 h-4 w-4" />
+                  Filters
+                </Button>
+
+                {/* Mobile Filters */}
+                <AnimatePresence>
+                  {showMobileFilters && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex flex-col space-y-2 sm:hidden w-full"
+                    >
+                      {['all', 'job', 'scholarship', 'internship', 'grant'].map((type) => (
+                        <Button
+                          key={type}
+                          variant={filterType === type ? 'default' : 'outline'}
+                          onClick={() => handleFilterChange(type as any)}
+                          className="capitalize w-full"
+                        >
+                          {getTypeIcon(type)}
+                          <span className="ml-2">{type}</span>
+                        </Button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Desktop Filters */}
+                <div className="hidden sm:flex space-x-2">
                   {['all', 'job', 'scholarship', 'internship', 'grant'].map((type) => (
                     <Button
                       key={type}
@@ -336,7 +374,7 @@ export default function Dashboard() {
 
             {paginatedOpportunities.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                   {paginatedOpportunities.map((opportunity) => (
                     <OpportunityCard 
                       key={opportunity.id} 
@@ -349,11 +387,12 @@ export default function Dashboard() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center space-x-2">
+                  <div className="flex justify-center space-x-2 overflow-x-auto py-2">
                     <Button
                       variant="outline"
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
+                      size="sm"
                     >
                       Previous
                     </Button>
@@ -362,7 +401,8 @@ export default function Dashboard() {
                         key={i + 1}
                         variant={currentPage === i + 1 ? 'default' : 'outline'}
                         onClick={() => setCurrentPage(i + 1)}
-                        className="w-10 h-10 p-0"
+                        className="w-8 h-8 p-0"
+                        size="sm"
                       >
                         {i + 1}
                       </Button>
@@ -371,6 +411,7 @@ export default function Dashboard() {
                       variant="outline"
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
+                      size="sm"
                     >
                       Next
                     </Button>
@@ -379,8 +420,8 @@ export default function Dashboard() {
               </>
             ) : (
               <Card>
-                <CardContent className="text-center py-12">
-                  <Search className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <CardContent className="text-center py-8 sm:py-12">
+                  <Search className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-600">No opportunities found matching your criteria.</p>
                   <Button className="mt-4" onClick={() => {
                     setSearchTerm('')
@@ -395,37 +436,37 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Your Applications</h2>
-                <p className="text-gray-600">Track your application progress</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Applications</h2>
+                <p className="text-sm sm:text-base text-gray-600">Track your progress</p>
               </div>
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <Clock className="mr-2 h-4 w-4" />
                 View History
               </Button>
             </div>
             
             {applications.length > 0 ? (
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Opportunity
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Organization
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="hidden sm:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Applied On
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -438,13 +479,13 @@ export default function Dashboard() {
                           key={application.id}
                           whileHover={{ backgroundColor: '#f9fafb' }}
                         >
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               {getTypeIcon(opportunity.type)}
-                              <span className="ml-2 font-medium text-gray-900">{opportunity.title}</span>
+                              <span className="ml-2 font-medium text-gray-900 text-sm sm:text-base">{opportunity.title}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <img
                                 src={`https://logo.clearbit.com/${opportunity.organization.toLowerCase().replace(/\s+/g, '')}.com`}
@@ -457,7 +498,7 @@ export default function Dashboard() {
                               <span className="text-gray-500">{opportunity.organization}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                             <Badge variant={
                               application.status === 'Pending' ? 'secondary' :
                               application.status === 'Accepted' ? 'default' :
@@ -466,12 +507,12 @@ export default function Dashboard() {
                               {application.status}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                          <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-center text-gray-500">
                             {format(new Date(application.appliedAt), 'MMM d, yyyy')}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
                             <Button variant="ghost" size="sm">
-                              View Details
+                              View
                             </Button>
                           </td>
                         </motion.tr>
@@ -482,11 +523,11 @@ export default function Dashboard() {
               </div>
             ) : (
               <Card>
-                <CardContent className="text-center py-12">
-                  <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600 mb-2">You haven't submitted any applications yet.</p>
-                  <p className="text-gray-500 mb-4">Start exploring opportunities and apply today!</p>
-                  <Button>Start Exploring Opportunities</Button>
+                <CardContent className="text-center py-8 sm:py-12">
+                  <BookOpen className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600 mb-2">No applications yet.</p>
+                  <p className="text-gray-500 mb-4">Start exploring opportunities!</p>
+                  <Button>Start Exploring</Button>
                 </CardContent>
               </Card>
             )}
@@ -512,17 +553,17 @@ const StatsCard = ({
   suffix?: string
 }) => (
   <Card className="bg-white/50 backdrop-blur-sm">
-    <CardContent className="p-6">
+    <CardContent className="p-4 sm:p-6">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900 mt-2">
+          <p className="text-xs sm:text-sm font-medium text-gray-600">{title}</p>
+          <h3 className="text-xl sm:text-3xl font-bold text-gray-900 mt-1 sm:mt-2">
             <CountUp end={value} duration={2} suffix={suffix} />
           </h3>
         </div>
         {icon}
       </div>
-      <p className="text-sm text-gray-500">{description}</p>
+      <p className="text-xs sm:text-sm text-gray-500">{description}</p>
     </CardContent>
   </Card>
 )
@@ -541,49 +582,49 @@ const OpportunityCard = ({
     transition={{ duration: 0.2 }}
   >
     <Card className="h-full bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow">
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {getTypeIcon(opportunity.type)}
-            <Badge variant="outline" className="capitalize">
+            <Badge variant="outline" className="capitalize text-xs sm:text-sm">
               {opportunity.type}
             </Badge>
           </div>
-          <Badge className={getStatusColor(opportunity.status)}>
+          <Badge className={`${getStatusColor(opportunity.status)} text-xs sm:text-sm`}>
             {opportunity.status}
           </Badge>
         </div>
-        <CardTitle className="mt-4 line-clamp-2">{opportunity.title}</CardTitle>
-        <CardDescription className="line-clamp-2">{opportunity.description}</CardDescription>
+        <CardTitle className="mt-4 text-base sm:text-lg line-clamp-2">{opportunity.title}</CardTitle>
+        <CardDescription className="text-sm line-clamp-2">{opportunity.description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         <div className="space-y-3">
-          <div className="flex items-center text-gray-600">
-            <Briefcase className="h-4 w-4 mr-2" />
-            <span>{opportunity.organization}</span>
+          <div className="flex items-center text-gray-600 text-sm">
+            <Briefcase className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{opportunity.organization}</span>
           </div>
           {showLocation && opportunity.location && (
-            <div className="flex items-center text-gray-600">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span>{opportunity.location}</span>
+            <div className="flex items-center text-gray-600 text-sm">
+              <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{opportunity.location}</span>
             </div>
           )}
           {opportunity.funding && (
-            <div className="flex items-center text-gray-600">
-              <DollarSign className="h-4 w-4 mr-2" />
-              <span>{opportunity.funding}</span>
+            <div className="flex items-center text-gray-600 text-sm">
+              <DollarSign className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{opportunity.funding}</span>
             </div>
           )}
           {showDeadline && (
-            <div className="flex items-center text-gray-600">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span>Deadline: {format(new Date(opportunity.deadline), 'MMM d, yyyy')}</span>
+            <div className="flex items-center text-gray-600 text-sm">
+              <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Deadline: {format(new Date(opportunity.deadline), 'MMM d, yyyy')}</span>
             </div>
           )}
         </div>
         <div className="mt-4 flex space-x-2">
           <Link href={`/opportunity/${opportunity.id}`} className="flex-1">
-            <Button className="w-full group">
+            <Button className="w-full group text-sm">
               View Details
               <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>

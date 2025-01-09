@@ -2,10 +2,14 @@
 
 import { motion } from 'framer-motion'
 
-export const GradientBackground = () => {
+interface GradientBackgroundProps {
+  className?: string;
+}
+
+export const GradientBackground = ({ className }: GradientBackgroundProps) => {
   return (
     <motion.div
-      className="fixed inset-0 -z-10"
+      className={`fixed inset-0 -z-10 ${className || ''}`}
       animate={{
         background: [
           'linear-gradient(45deg, #1a365d 0%, #2563eb 50%, #1a365d 100%)',
