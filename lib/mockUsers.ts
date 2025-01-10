@@ -11,6 +11,10 @@ export interface User {
   phoneNumber?: string;
   organizationDetails?: string;
   joinDate: string;
+  yearOfStudy?: number;
+  faculty?: string;
+  createdAt: string;
+  status?: 'active' | 'inactive';
 }
 
 export const mockUsers: User[] = [
@@ -25,6 +29,8 @@ export const mockUsers: User[] = [
     phoneNumber: '+1234567890',
     organizationDetails: 'AspireBridge Main Office',
     joinDate: '2024-01-01',
+    createdAt: '2024-01-01',
+    status: 'active'
   },
   {
     id: 2,
@@ -38,6 +44,8 @@ export const mockUsers: User[] = [
     description: 'Aspiring software developer',
     phoneNumber: '+9876543210',
     joinDate: '2024-01-01',
+    createdAt: '2024-01-01',
+    status: 'active'
   },
   {
     id: 3,
@@ -50,6 +58,8 @@ export const mockUsers: User[] = [
     course: 'Mathematics',
     phoneNumber: '+1122334455',
     joinDate: '2024-01-01',
+    createdAt: '2024-01-01',
+    status: 'active'
   },
   {
     id: 4,
@@ -62,6 +72,8 @@ export const mockUsers: User[] = [
     course: 'Physics',
     phoneNumber: '+5544332211',
     joinDate: '2024-01-01',
+    createdAt: '2024-01-01',
+    status: 'active'
   },
 ];
 

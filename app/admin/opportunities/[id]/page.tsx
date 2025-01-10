@@ -91,7 +91,7 @@ export default function OpportunityDetails({ params }: { params: { id: string } 
             <CardContent className="space-y-4">
               <p><strong>Organization:</strong> {opportunity.organization}</p>
               <p><strong>Type:</strong> {opportunity.type}</p>
-              <p><strong>Status:</strong> <Badge variant={opportunity.status === 'Open' ? 'success' : 'destructive'}>{opportunity.status}</Badge></p>
+              <p><strong>Status:</strong> <Badge variant={opportunity.status === 'Open' ? 'default' : 'destructive'}>{opportunity.status}</Badge></p>
               <div className="flex items-center">
                 <Calendar className="mr-2" />
                 <p><strong>Deadline:</strong> {opportunity.deadline}</p>

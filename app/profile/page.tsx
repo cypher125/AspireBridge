@@ -14,9 +14,10 @@ import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserIcon, Mail, Book, Phone, FileText, Camera, MapPin, Calendar, Briefcase, School } from 'lucide-react'
+import { UserIcon, Mail, Book, Phone, FileText, Camera, MapPin, Calendar, Briefcase, School, Edit2, Award, GraduationCap, Clock, Activity } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 
 export default function Profile() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -66,14 +67,14 @@ export default function Profile() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Header />
       <motion.main 
         className="container mx-auto px-4 py-8"
@@ -88,159 +89,241 @@ export default function Profile() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold text-gray-900">Profile Dashboard</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              Profile Dashboard
+            </h1>
             {!isEditing && (
-              <Button onClick={() => setIsEditing(true)} className="bg-primary hover:bg-primary/90">
-                <UserIcon className="mr-2 h-4 w-4" />
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                className="shadow-lg bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+              >
+                <Edit2 className="mr-2 h-4 w-4" />
                 Edit Profile
               </Button>
             )}
           </motion.div>
 
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="bg-white/50 backdrop-blur-sm">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="details">Personal Details</TabsTrigger>
+            <TabsList className="bg-white/50 backdrop-blur-sm border-b border-gray-200 w-full justify-start p-0">
+              <TabsTrigger value="overview" className="px-6 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary">Overview</TabsTrigger>
+              <TabsTrigger value="details" className="px-6 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary">Personal Details</TabsTrigger>
               {currentUser.role === 'student' && (
-                <TabsTrigger value="academic">Academic Info</TabsTrigger>
+                <>
+                  <TabsTrigger value="academic" className="px-6 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary">Academic Info</TabsTrigger>
+                  <TabsTrigger value="achievements" className="px-6 py-3 data-[state=active]:border-b-2 data-[state=active]:border-primary">Achievements</TabsTrigger>
+                </>
               )}
             </TabsList>
 
             <TabsContent value="overview">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="col-span-1">
-                  <CardHeader>
-                    <CardTitle>Profile Picture</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <Avatar className="w-40 h-40 mb-6">
-                      <AvatarImage src={currentUser.profilePicture || undefined} alt={currentUser.name} />
-                      <AvatarFallback className="text-2xl">{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    {isEditing && (
-                      <Label htmlFor="profilePicture" className="cursor-pointer">
-                        <Input
-                          id="profilePicture"
-                          type="file"
-                          onChange={handleFileChange}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                        <Button variant="outline" className="w-full">
-                          <Camera className="mr-2 h-4 w-4" />
-                          Change Picture
-                        </Button>
-                      </Label>
-                    )}
-                    <div className="mt-6 w-full">
-                      <h3 className="text-xl font-semibold text-center mb-2">{currentUser.name}</h3>
-                      <Badge variant="outline" className="w-full justify-center">
-                        {currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card className="col-span-1 bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-semibold text-gray-800">Profile Picture</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center">
+                      <div className="relative group">
+                        <Avatar className="w-48 h-48 mb-6 ring-4 ring-primary/10 group-hover:ring-primary/20 transition-all">
+                          <AvatarImage src={currentUser.profilePicture || undefined} alt={currentUser.name} className="object-cover" />
+                          <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-purple-600 text-white">
+                            {currentUser.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isEditing && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Label htmlFor="profilePicture" className="cursor-pointer">
+                              <Input
+                                id="profilePicture"
+                                type="file"
+                                onChange={handleFileChange}
+                                accept="image/*"
+                                className="hidden"
+                              />
+                              <Camera className="h-8 w-8 text-white" />
+                            </Label>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-6 w-full text-center">
+                        <h3 className="text-2xl font-bold text-gray-800 mb-3">{currentUser.name}</h3>
+                        <Badge variant="outline" className="px-4 py-1 text-sm font-medium bg-primary/10 text-primary border-none">
+                          {currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <Card className="col-span-2">
-                  <CardHeader>
-                    <CardTitle>Quick Information</CardTitle>
-                    <CardDescription>Overview of your profile details</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="h-5 w-5 text-gray-500" />
-                        <span>{currentUser.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-5 w-5 text-gray-500" />
-                        <span>{currentUser.phoneNumber || 'Not provided'}</span>
-                      </div>
-                      {currentUser.role === 'student' && (
-                        <>
-                          <div className="flex items-center space-x-3">
-                            <School className="h-5 w-5 text-gray-500" />
-                            <span>{currentUser.course}</span>
+                  {currentUser.role === 'student' && (
+                    <Card className="mt-6 bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
+                      <CardHeader>
+                        <CardTitle className="text-xl font-semibold text-gray-800">Progress Overview</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm text-gray-600">Course Completion</span>
+                            <span className="text-sm font-medium">75%</span>
                           </div>
-                          <div className="flex items-center space-x-3">
-                            <Book className="h-5 w-5 text-gray-500" />
-                            <span>{currentUser.matriculationNumber}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <div className="space-y-4">
-                      {currentUser.role === 'admin' && (
-                        <div className="flex items-start space-x-3">
-                          <Briefcase className="h-5 w-5 text-gray-500 mt-1" />
-                          <span>{currentUser.organizationDetails}</span>
+                          <Progress value={75} className="h-2" />
                         </div>
-                      )}
-                      <div className="flex items-start space-x-3">
-                        <FileText className="h-5 w-5 text-gray-500 mt-1" />
-                        <span>{currentUser.description || 'No description provided'}</span>
+                        <div>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm text-gray-600">Credits Earned</span>
+                            <span className="text-sm font-medium">90/120</span>
+                          </div>
+                          <Progress value={75} className="h-2" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="col-span-2"
+                >
+                  <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all h-full">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-semibold text-gray-800">Quick Information</CardTitle>
+                      <CardDescription className="text-gray-500">Overview of your profile details</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-4 p-4 bg-white/40 rounded-lg">
+                          <Mail className="h-6 w-6 text-primary" />
+                          <div>
+                            <p className="text-sm text-gray-500">Email</p>
+                            <p className="font-medium text-gray-900">{currentUser.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4 p-4 bg-white/40 rounded-lg">
+                          <Phone className="h-6 w-6 text-primary" />
+                          <div>
+                            <p className="text-sm text-gray-500">Phone</p>
+                            <p className="font-medium text-gray-900">{currentUser.phoneNumber || 'Not provided'}</p>
+                          </div>
+                        </div>
+                        {currentUser.role === 'student' && (
+                          <>
+                            <div className="flex items-center space-x-4 p-4 bg-white/40 rounded-lg">
+                              <School className="h-6 w-6 text-primary" />
+                              <div>
+                                <p className="text-sm text-gray-500">Course</p>
+                                <p className="font-medium text-gray-900">{currentUser.course}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4 p-4 bg-white/40 rounded-lg">
+                              <Book className="h-6 w-6 text-primary" />
+                              <div>
+                                <p className="text-sm text-gray-500">Matriculation Number</p>
+                                <p className="font-medium text-gray-900">{currentUser.matriculationNumber}</p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="space-y-6">
+                        {currentUser.role === 'admin' && (
+                          <div className="flex items-start space-x-4 p-4 bg-white/40 rounded-lg">
+                            <Briefcase className="h-6 w-6 text-primary" />
+                            <div>
+                              <p className="text-sm text-gray-500">Organization</p>
+                              <p className="font-medium text-gray-900">{currentUser.organizationDetails}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-start space-x-4 p-4 bg-white/40 rounded-lg">
+                          <FileText className="h-6 w-6 text-primary" />
+                          <div>
+                            <p className="text-sm text-gray-500">Description</p>
+                            <p className="font-medium text-gray-900">{currentUser.description || 'No description provided'}</p>
+                          </div>
+                        </div>
+                        {currentUser.role === 'student' && (
+                          <div className="flex items-start space-x-4 p-4 bg-white/40 rounded-lg">
+                            <Activity className="h-6 w-6 text-primary" />
+                            <div>
+                              <p className="text-sm text-gray-500">Recent Activity</p>
+                              <p className="font-medium text-gray-900">Applied to 3 opportunities this month</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
             </TabsContent>
 
             <TabsContent value="details">
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg">
                 <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Manage your personal details</CardDescription>
+                  <CardTitle className="text-2xl font-semibold text-gray-800">Personal Information</CardTitle>
+                  <CardDescription className="text-gray-500">Manage your personal details</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Form fields from original code */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name" className="text-gray-700">Name</Label>
                         <Input
                           id="name"
                           name="name"
                           value={editedUser?.name || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
+                          className="bg-white/70"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email" className="text-gray-700">Email</Label>
                         <Input
                           id="email"
                           name="email"
                           value={editedUser?.email || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
+                          className="bg-white/70"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phoneNumber">Phone Number</Label>
+                        <Label htmlFor="phoneNumber" className="text-gray-700">Phone Number</Label>
                         <Input
                           id="phoneNumber"
                           name="phoneNumber"
                           value={editedUser?.phoneNumber || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
+                          className="bg-white/70"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description" className="text-gray-700">Description</Label>
                         <Textarea
                           id="description"
                           name="description"
                           value={editedUser?.description || ''}
                           onChange={handleInputChange}
                           disabled={!isEditing}
+                          className="bg-white/70 min-h-[100px]"
                         />
                       </div>
                     </div>
                     {isEditing && (
-                      <div className="flex space-x-4">
-                        <Button type="submit">Save Changes</Button>
-                        <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                      <div className="flex space-x-4 pt-4">
+                        <Button type="submit" className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90">
+                          Save Changes
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                          Cancel
+                        </Button>
                       </div>
                     )}
                   </form>
@@ -249,38 +332,155 @@ export default function Profile() {
             </TabsContent>
 
             {currentUser.role === 'student' && (
-              <TabsContent value="academic">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Academic Information</CardTitle>
-                    <CardDescription>Your academic details and progress</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="matriculationNumber">Matriculation Number</Label>
-                        <Input
-                          id="matriculationNumber"
-                          name="matriculationNumber"
-                          value={editedUser?.matriculationNumber || ''}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                        />
+              <>
+                <TabsContent value="academic">
+                  <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-semibold text-gray-800">Academic Information</CardTitle>
+                      <CardDescription className="text-gray-500">Your academic details and progress</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="matriculationNumber" className="text-gray-700">Matriculation Number</Label>
+                          <Input
+                            id="matriculationNumber"
+                            name="matriculationNumber"
+                            value={editedUser?.matriculationNumber || ''}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className="bg-white/70"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="course" className="text-gray-700">Course</Label>
+                          <Input
+                            id="course"
+                            name="course"
+                            value={editedUser?.course || ''}
+                            onChange={handleInputChange}
+                            disabled={!isEditing}
+                            className="bg-white/70"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="semester" className="text-gray-700">Current Semester</Label>
+                          <Input
+                            id="semester"
+                            name="semester"
+                            value="4th Semester"
+                            disabled
+                            className="bg-white/70"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="gpa" className="text-gray-700">Current GPA</Label>
+                          <Input
+                            id="gpa"
+                            name="gpa"
+                            value="3.8"
+                            disabled
+                            className="bg-white/70"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="course">Course</Label>
-                        <Input
-                          id="course"
-                          name="course"
-                          value={editedUser?.course || ''}
-                          onChange={handleInputChange}
-                          disabled={!isEditing}
-                        />
+
+                      <div className="mt-8">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Academic Progress</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <Card className="bg-white/70">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <GraduationCap className="h-8 w-8 text-primary mx-auto mb-2" />
+                                <h4 className="font-semibold">Credits Completed</h4>
+                                <p className="text-2xl font-bold text-primary mt-2">90/120</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-white/70">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
+                                <h4 className="font-semibold">Study Duration</h4>
+                                <p className="text-2xl font-bold text-primary mt-2">2 Years</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-white/70">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <Award className="h-8 w-8 text-primary mx-auto mb-2" />
+                                <h4 className="font-semibold">Achievements</h4>
+                                <p className="text-2xl font-bold text-primary mt-2">12</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="achievements">
+                  <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-semibold text-gray-800">Achievements & Certifications</CardTitle>
+                      <CardDescription className="text-gray-500">Your academic and professional achievements</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card className="bg-white/70">
+                          <CardHeader>
+                            <CardTitle className="text-xl">Academic Achievements</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-4">
+                              <li className="flex items-start space-x-3">
+                                <Award className="h-5 w-5 text-primary mt-1" />
+                                <div>
+                                  <p className="font-medium">Dean's List</p>
+                                  <p className="text-sm text-gray-500">Fall Semester 2023</p>
+                                </div>
+                              </li>
+                              <li className="flex items-start space-x-3">
+                                <Award className="h-5 w-5 text-primary mt-1" />
+                                <div>
+                                  <p className="font-medium">Academic Excellence Award</p>
+                                  <p className="text-sm text-gray-500">Spring Semester 2023</p>
+                                </div>
+                              </li>
+                            </ul>
+                          </CardContent>
+                        </Card>
+
+                        <Card className="bg-white/70">
+                          <CardHeader>
+                            <CardTitle className="text-xl">Certifications</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ul className="space-y-4">
+                              <li className="flex items-start space-x-3">
+                                <Badge className="h-5 w-5 text-primary mt-1" />
+                                <div>
+                                  <p className="font-medium">AWS Cloud Practitioner</p>
+                                  <p className="text-sm text-gray-500">Issued Dec 2023</p>
+                                </div>
+                              </li>
+                              <li className="flex items-start space-x-3">
+                                <Badge className="h-5 w-5 text-primary mt-1" />
+                                <div>
+                                  <p className="font-medium">Google Data Analytics</p>
+                                  <p className="text-sm text-gray-500">Issued Oct 2023</p>
+                                </div>
+                              </li>
+                            </ul>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </div>

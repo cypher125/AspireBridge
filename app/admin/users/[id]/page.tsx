@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import Header from '../../../../components/Header'
 import Footer from '../../../../components/Footer'
 import { User, mockUsers } from '../../../../lib/mockUsers'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { motion } from 'framer-motion'
-import { ArrowLeft, Mail, Phone, Book, FileText } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, Book, FileText, MapPin, Calendar, Shield, Activity, Clock, Edit, Trash2 } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 
 export default function UserDetails({ params }: { params: { id: string } }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -40,111 +42,199 @@ export default function UserDetails({ params }: { params: { id: string } }) {
   }, [router, params.id])
 
   if (!currentUser || !user) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    )
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-white">
       <Header />
-      <motion.main 
-        className="container mx-auto px-4 py-16"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Button
-            onClick={() => router.back()}
-            variant="ghost"
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Users
-          </Button>
-        </motion.div>
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => router.back()}
+              variant="ghost"
+              size="sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+            <Badge variant="outline">User Profile</Badge>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="outline" className="text-yellow-600 hover:text-yellow-700">
+              <Edit className="mr-2 h-4 w-4" />
+              Edit User
+            </Button>
+            <Button variant="outline" className="text-red-600 hover:text-red-700">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete User
+            </Button>
+          </div>
+        </div>
 
-        <motion.h1 
-          className="text-3xl font-bold mb-8"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          User Details
-        </motion.h1>
-
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="md:col-span-1">
-            <CardHeader>
-              <CardTitle>Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="w-32 h-32 mb-4">
-                <AvatarImage src={user.profilePicture} alt={user.name} />
-                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h2 className="text-2xl font-bold mb-2">{user.name}</h2>
-              <Badge>{user.role}</Badge>
-            </CardContent>
-          </Card>
-
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>User Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <Mail className="mr-2" />
-                  <p><strong>Email:</strong> {user.email}</p>
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 lg:col-span-4">
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-32 h-32 mb-4 border-4 border-white shadow-lg">
+                    <AvatarImage src={user.profilePicture} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-2xl font-bold mb-2">{user.name}</h2>
+                  <Badge className="mb-4" variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                    {user.role}
+                  </Badge>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Activity className="h-4 w-4" />
+                    <span>Active</span>
+                    <span>•</span>
+                    <Clock className="h-4 w-4" />
+                    <span>Last seen 2h ago</span>
+                  </div>
                 </div>
-                {user.phoneNumber && (
-                  <div className="flex items-center">
-                    <Phone className="mr-2" />
-                    <p><strong>Phone Number:</strong> {user.phoneNumber}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Member Since</span>
+                    <Badge variant="outline">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {new Date().toLocaleDateString()}
+                    </Badge>
                   </div>
-                )}
-                {user.matriculationNumber && (
-                  <div className="flex items-center">
-                    <Book className="mr-2" />
-                    <p><strong>Matriculation Number:</strong> {user.matriculationNumber}</p>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Applications</span>
+                    <Badge>12</Badge>
                   </div>
-                )}
-                {user.course && (
-                  <div className="flex items-center">
-                    <Book className="mr-2" />
-                    <p><strong>Course:</strong> {user.course}</p>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Status</span>
+                    <Badge variant="default">Active</Badge>
                   </div>
-                )}
-                {user.organizationDetails && (
-                  <div className="flex items-center">
-                    <FileText className="mr-2" />
-                    <p><strong>Organization Details:</strong> {user.organizationDetails}</p>
-                  </div>
-                )}
-                {user.description && (
-                  <div className="flex items-start">
-                    <FileText className="mr-2 mt-1" />
-                    <div>
-                      <p><strong>Description:</strong></p>
-                      <p>{user.description}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="col-span-12 lg:col-span-8">
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+                <TabsTrigger value="applications">Applications</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Information</CardTitle>
+                    <CardDescription>Detailed information about the user</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-5 w-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm text-gray-500">Email Address</p>
+                            <p className="font-medium">{user.email}</p>
+                          </div>
+                        </div>
+
+                        {user.phoneNumber && (
+                          <div className="flex items-center space-x-3">
+                            <Phone className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm text-gray-500">Phone Number</p>
+                              <p className="font-medium">{user.phoneNumber}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {user.matriculationNumber && (
+                          <div className="flex items-center space-x-3">
+                            <Book className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm text-gray-500">Matriculation Number</p>
+                              <p className="font-medium">{user.matriculationNumber}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        {user.course && (
+                          <div className="flex items-center space-x-3">
+                            <Book className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm text-gray-500">Course</p>
+                              <p className="font-medium">{user.course}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {user.organizationDetails && (
+                          <div className="flex items-center space-x-3">
+                            <Shield className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm text-gray-500">Organization</p>
+                              <p className="font-medium">{user.organizationDetails}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.main>
+
+                    {user.description && (
+                      <div className="mt-6">
+                        <p className="text-sm text-gray-500 mb-2">Description</p>
+                        <p className="text-gray-700">{user.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="activity">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>User's latest actions and updates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-500">No recent activity to display</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="applications">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Applications History</CardTitle>
+                    <CardDescription>Overview of user's applications</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-500">No applications found</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </main>
       <Footer />
-    </>
+    </div>
   )
 }
-
