@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserIcon, Mail, Book, Phone, FileText, Camera, MapPin, Calendar, Briefcase, School, Edit2, Award, GraduationCap, Clock, Activity } from 'lucide-react'
+import { UserIcon, Mail, Book, Phone, FileText, Camera, MapPin, Calendar, Briefcase, School, Edit2, Award, GraduationCap, Clock, Activity, ArrowLeft } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -73,6 +73,13 @@ export default function Profile() {
     )
   }
 
+  // Calculate progress based on user data
+  const courseProgress = currentUser.completedCourses?.length && currentUser.totalCourses ? 
+    (currentUser.completedCourses.length / currentUser.totalCourses) * 100 : 0;
+  const creditsEarned = currentUser.creditsEarned || 0
+  const totalCredits = currentUser.totalCredits || 120
+  const creditsProgress = (creditsEarned / totalCredits) * 100
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Header />
@@ -89,9 +96,19 @@ export default function Profile() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Profile Dashboard
-            </h1>
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => router.back()}
+                className="hover:bg-white/50"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                Back
+              </Button>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                Profile Dashboard
+              </h1>
+            </div>
             {!isEditing && (
               <Button 
                 onClick={() => setIsEditing(true)} 
@@ -167,16 +184,16 @@ export default function Profile() {
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm text-gray-600">Course Completion</span>
-                            <span className="text-sm font-medium">75%</span>
+                            <span className="text-sm font-medium">{courseProgress.toFixed(1)}%</span>
                           </div>
-                          <Progress value={75} className="h-2" />
+                          <Progress value={courseProgress} className="h-2" />
                         </div>
                         <div>
                           <div className="flex justify-between mb-2">
                             <span className="text-sm text-gray-600">Credits Earned</span>
-                            <span className="text-sm font-medium">90/120</span>
+                            <span className="text-sm font-medium">{creditsEarned}/{totalCredits}</span>
                           </div>
-                          <Progress value={75} className="h-2" />
+                          <Progress value={creditsProgress} className="h-2" />
                         </div>
                       </CardContent>
                     </Card>
@@ -251,7 +268,7 @@ export default function Profile() {
                             <Activity className="h-6 w-6 text-primary" />
                             <div>
                               <p className="text-sm text-gray-500">Recent Activity</p>
-                              <p className="font-medium text-gray-900">Applied to 3 opportunities this month</p>
+                              <p className="font-medium text-gray-900">{currentUser.recentActivity || 'No recent activity'}</p>
                             </div>
                           </div>
                         )}
@@ -368,7 +385,7 @@ export default function Profile() {
                           <Input
                             id="semester"
                             name="semester"
-                            value="4th Semester"
+                            value={currentUser.currentSemester || 'Not available'}
                             disabled
                             className="bg-white/70"
                           />
@@ -378,7 +395,7 @@ export default function Profile() {
                           <Input
                             id="gpa"
                             name="gpa"
-                            value="3.8"
+                            value={currentUser.gpa || 'Not available'}
                             disabled
                             className="bg-white/70"
                           />
@@ -393,7 +410,7 @@ export default function Profile() {
                               <div className="text-center">
                                 <GraduationCap className="h-8 w-8 text-primary mx-auto mb-2" />
                                 <h4 className="font-semibold">Credits Completed</h4>
-                                <p className="text-2xl font-bold text-primary mt-2">90/120</p>
+                                <p className="text-2xl font-bold text-primary mt-2">{creditsEarned}/{totalCredits}</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -402,7 +419,7 @@ export default function Profile() {
                               <div className="text-center">
                                 <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
                                 <h4 className="font-semibold">Study Duration</h4>
-                                <p className="text-2xl font-bold text-primary mt-2">2 Years</p>
+                                <p className="text-2xl font-bold text-primary mt-2">{currentUser.studyDuration || '0'} Years</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -411,7 +428,7 @@ export default function Profile() {
                               <div className="text-center">
                                 <Award className="h-8 w-8 text-primary mx-auto mb-2" />
                                 <h4 className="font-semibold">Achievements</h4>
-                                <p className="text-2xl font-bold text-primary mt-2">12</p>
+                                <p className="text-2xl font-bold text-primary mt-2">{currentUser.achievements?.length || 0}</p>
                               </div>
                             </CardContent>
                           </Card>
@@ -435,20 +452,17 @@ export default function Profile() {
                           </CardHeader>
                           <CardContent>
                             <ul className="space-y-4">
-                              <li className="flex items-start space-x-3">
-                                <Award className="h-5 w-5 text-primary mt-1" />
-                                <div>
-                                  <p className="font-medium">Dean's List</p>
-                                  <p className="text-sm text-gray-500">Fall Semester 2023</p>
-                                </div>
-                              </li>
-                              <li className="flex items-start space-x-3">
-                                <Award className="h-5 w-5 text-primary mt-1" />
-                                <div>
-                                  <p className="font-medium">Academic Excellence Award</p>
-                                  <p className="text-sm text-gray-500">Spring Semester 2023</p>
-                                </div>
-                              </li>
+                              {currentUser.academicAchievements?.map((achievement, index) => (
+                                <li key={index} className="flex items-start space-x-3">
+                                  <Award className="h-5 w-5 text-primary mt-1" />
+                                  <div>
+                                    <p className="font-medium">{achievement.title}</p>
+                                    <p className="text-sm text-gray-500">{achievement.date}</p>
+                                  </div>
+                                </li>
+                              )) || (
+                                <li className="text-gray-500">No academic achievements yet</li>
+                              )}
                             </ul>
                           </CardContent>
                         </Card>
@@ -459,20 +473,17 @@ export default function Profile() {
                           </CardHeader>
                           <CardContent>
                             <ul className="space-y-4">
-                              <li className="flex items-start space-x-3">
-                                <Badge className="h-5 w-5 text-primary mt-1" />
-                                <div>
-                                  <p className="font-medium">AWS Cloud Practitioner</p>
-                                  <p className="text-sm text-gray-500">Issued Dec 2023</p>
-                                </div>
-                              </li>
-                              <li className="flex items-start space-x-3">
-                                <Badge className="h-5 w-5 text-primary mt-1" />
-                                <div>
-                                  <p className="font-medium">Google Data Analytics</p>
-                                  <p className="text-sm text-gray-500">Issued Oct 2023</p>
-                                </div>
-                              </li>
+                              {currentUser.certifications?.map((cert, index) => (
+                                <li key={index} className="flex items-start space-x-3">
+                                  <Badge className="h-5 w-5 text-primary mt-1" />
+                                  <div>
+                                    <p className="font-medium">{cert.title}</p>
+                                    <p className="text-sm text-gray-500">{cert.issueDate}</p>
+                                  </div>
+                                </li>
+                              )) || (
+                                <li className="text-gray-500">No certifications yet</li>
+                              )}
                             </ul>
                           </CardContent>
                         </Card>

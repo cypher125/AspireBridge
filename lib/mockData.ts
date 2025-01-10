@@ -12,6 +12,7 @@ export interface Opportunity {
   location?: string;
   funding?: string;
   totalApplicants?: number;
+  experienceRequired?: number;
 }
 
 export interface Application {
@@ -23,6 +24,7 @@ export interface Application {
   coverLetter: string;
   updatedAt?: string;
   documents?: { name: string; url: string; }[];
+  evaluationNotes?: string;
 }
 
 export let mockOpportunities: Opportunity[] = [

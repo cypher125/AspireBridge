@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '../../../../components/Header'
 import Footer from '../../../../components/Footer'
-import { User } from '../../../../lib/mockUsers'
-import { Opportunity, mockOpportunities } from '../../../../lib/mockData'
+import { User, mockUsers } from '../../../../lib/mockUsers'
+import { Opportunity, Application, mockOpportunities, mockApplications } from '../../../../lib/mockData'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Briefcase, Calendar, Users, FileText } from 'lucide-react'
+import { ArrowLeft, Briefcase, Calendar, Users, FileText, CheckCircle } from 'lucide-react'
 
 export default function OpportunityDetails({ params }: { params: { id: string } }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null)
+  const [applications, setApplications] = useState<Application[]>([])
+  const [applicants, setApplicants] = useState<User[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -34,6 +36,15 @@ export default function OpportunityDetails({ params }: { params: { id: string } 
     const foundOpportunity = mockOpportunities.find(opp => opp.id === opportunityId)
     if (foundOpportunity) {
       setOpportunity(foundOpportunity)
+      
+      // Get applications for this opportunity
+      const opportunityApplications = mockApplications.filter(app => app.opportunityId === opportunityId)
+      setApplications(opportunityApplications)
+      
+      // Get applicant details
+      const applicantIds = opportunityApplications.map(app => app.userId)
+      const foundApplicants = mockUsers.filter(user => applicantIds.includes(user.id))
+      setApplicants(foundApplicants)
     } else {
       router.push('/admin/opportunities')
     }
@@ -42,6 +53,19 @@ export default function OpportunityDetails({ params }: { params: { id: string } 
   if (!currentUser || !opportunity) {
     return <div>Loading...</div>
   }
+
+  // Calculate stats from mock data
+  const totalApplications = applications.length
+  const acceptedApplications = applications.filter(app => app.status === 'Accepted').length
+  const pendingApplications = applications.filter(app => app.status === 'Pending').length
+  const applicationRate = totalApplications > 0 ? Math.round((acceptedApplications / totalApplications) * 100) : 0
+
+  // Calculate qualification matches
+  const qualifiedApplicants = applicants.filter(applicant => 
+    opportunity.requirements.some(req =>
+      applicant.skills?.some(skill => req.toLowerCase().includes(skill.toLowerCase()))
+    )
+  ).length
 
   return (
     <>
@@ -95,6 +119,13 @@ export default function OpportunityDetails({ params }: { params: { id: string } 
               <div className="flex items-center">
                 <Calendar className="mr-2" />
                 <p><strong>Deadline:</strong> {opportunity.deadline}</p>
+              </div>
+              <div className="mt-4 space-y-2">
+                <p><strong>Total Applications:</strong> {totalApplications}</p>
+                <p><strong>Accepted Applications:</strong> {acceptedApplications}</p>
+                <p><strong>Pending Review:</strong> {pendingApplications}</p>
+                <p><strong>Acceptance Rate:</strong> {applicationRate}%</p>
+                <p><strong>Qualified Applicants:</strong> {qualifiedApplicants}</p>
               </div>
             </CardContent>
           </Card>
@@ -169,4 +200,3 @@ export default function OpportunityDetails({ params }: { params: { id: string } 
     </>
   )
 }
-

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { use } from 'react'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
-import { User } from '../../../lib/mockUsers'
+import { User, mockUsers } from '../../../lib/mockUsers'
 import { Opportunity, Application, mockOpportunities, mockApplications } from '../../../lib/mockData'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -104,6 +104,9 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
 
   const daysLeft = Math.ceil((new Date(opportunity.deadline).getTime() - new Date().getTime()) / (1000 * 3600 * 24))
   const progressValue = (daysLeft / 30) * 100 // Assuming 30 days is full period
+  
+  // Calculate total applicants from mock data
+  const totalApplicants = mockApplications.filter(app => app.opportunityId === opportunity.id).length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -214,12 +217,12 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <Users className="h-5 w-5 text-gray-600 mb-2" />
                           <p className="text-sm text-gray-600">Total Applicants</p>
-                          <p className="text-xl font-semibold">{opportunity.totalApplicants || 0}</p>
+                          <p className="text-xl font-semibold">{totalApplicants}</p>
                         </div>
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <Clock className="h-5 w-5 text-gray-600 mb-2" />
                           <p className="text-sm text-gray-600">Time Commitment</p>
-                          <p className="text-xl font-semibold">Full Time</p>
+                          <p className="text-xl font-semibold">{opportunity.timeCommitment || 'Full Time'}</p>
                         </div>
                       </div>
                     </CardContent>

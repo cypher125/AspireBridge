@@ -45,11 +45,25 @@ export default function ManageUsers() {
     return matchesSearch && matchesRole
   })
 
+  // Calculate stats from mock data
+  const currentMonth = new Date().getMonth()
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
+  const currentYear = new Date().getFullYear()
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
+
+  const currentMonthUsers = mockUsers.filter(u => new Date(u.createdAt).getMonth() === currentMonth && new Date(u.createdAt).getFullYear() === currentYear).length
+  const lastMonthUsers = mockUsers.filter(u => new Date(u.createdAt).getMonth() === lastMonth && new Date(u.createdAt).getFullYear() === lastMonthYear).length
+  const monthlyChange = ((currentMonthUsers - lastMonthUsers) / lastMonthUsers) * 100
+
+  const activeUsers = mockUsers.filter(u => u.status === 'active').length
+  const lastMonthActiveUsers = activeUsers - Math.floor(activeUsers * 0.08) // Simulating 8% increase
+  const activeChange = ((activeUsers - lastMonthActiveUsers) / lastMonthActiveUsers) * 100
+
   const stats = {
-    total: users.length,
-    active: users.filter(u => u.status === 'active').length,
-    admins: users.filter(u => u.role === 'admin').length,
-    new: users.filter(u => new Date(u.createdAt).getMonth() === new Date().getMonth()).length
+    total: mockUsers.length,
+    active: activeUsers,
+    admins: mockUsers.filter(u => u.role === 'admin').length,
+    new: currentMonthUsers
   }
 
   if (!currentUser) {
@@ -104,7 +118,9 @@ export default function ManageUsers() {
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-gray-500">
-                  <span className="text-green-500">↑ 12%</span> from last month
+                  <span className={monthlyChange >= 0 ? "text-green-500" : "text-red-500"}>
+                    {monthlyChange >= 0 ? "↑" : "↓"} {Math.abs(Math.round(monthlyChange))}%
+                  </span> from last month
                 </div>
               </CardContent>
             </Card>
@@ -115,7 +131,7 @@ export default function ManageUsers() {
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-gray-500">
-                  <span className="text-green-500">↑ 8%</span> from last month
+                  <span className="text-green-500">↑ {Math.round(activeChange)}%</span> from last month
                 </div>
               </CardContent>
             </Card>
@@ -137,7 +153,9 @@ export default function ManageUsers() {
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-gray-500">
-                  <span className="text-red-500">↓ 5%</span> from last month
+                  <span className={monthlyChange >= 0 ? "text-green-500" : "text-red-500"}>
+                    {monthlyChange >= 0 ? "↑" : "↓"} {Math.abs(Math.round(monthlyChange))}%
+                  </span> from last month
                 </div>
               </CardContent>
             </Card>
@@ -225,12 +243,12 @@ export default function ManageUsers() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Active
+                              {user.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-gray-500">
-                              {new Date().toLocaleDateString()}
+                              {new Date(user.lastActive || user.createdAt).toLocaleDateString()}
                             </div>
                           </TableCell>
                           <TableCell>

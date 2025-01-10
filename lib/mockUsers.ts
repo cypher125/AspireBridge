@@ -1,9 +1,20 @@
+interface Achievement {
+  title: string;
+  date: string;
+}
+
+interface Certification {
+  title: string;
+  issueDate: string;
+}
+
 export interface User {
   id: number;
   name: string;
   email: string;
   password: string;
   role: 'admin' | 'student';
+  skills?: string[];
   profilePicture?: string;
   matriculationNumber?: string;
   course?: string;
@@ -15,6 +26,18 @@ export interface User {
   faculty?: string;
   createdAt: string;
   status?: 'active' | 'inactive';
+  lastActive?: string;
+  creditsEarned?: number;
+  totalCredits?: number;
+  completedCourses?: string[];
+  totalCourses?: number;
+  currentSemester?: number;
+  gpa?: number;
+  studyDuration?: number;
+  achievements?: string[];
+  recentActivity?: string;
+  academicAchievements?: Achievement[];
+  certifications?: Certification[];
 }
 
 export const mockUsers: User[] = [

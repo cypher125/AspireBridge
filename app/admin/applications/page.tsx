@@ -21,8 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function ManageApplications() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [applications, setApplications] = useState<Application[]>(mockApplications)
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities)
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const [opportunities] = useState<Opportunity[]>(mockOpportunities)
+  const [users] = useState<User[]>(mockUsers)
   const [filteredApplications, setFilteredApplications] = useState<Application[]>(mockApplications)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -45,7 +45,7 @@ export default function ManageApplications() {
   }, [router])
 
   useEffect(() => {
-    let filtered = applications
+    let filtered = mockApplications
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(app => app.status === statusFilter)
@@ -53,22 +53,22 @@ export default function ManageApplications() {
 
     if (typeFilter !== 'all') {
       filtered = filtered.filter(app => {
-        const opportunity = opportunities.find(opp => opp.id === app.opportunityId)
+        const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
         return opportunity?.type === typeFilter
       })
     }
 
     if (searchTerm) {
       filtered = filtered.filter(app => {
-        const user = users.find(u => u.id === app.userId)
-        const opportunity = opportunities.find(opp => opp.id === app.opportunityId)
+        const user = mockUsers.find(u => u.id === app.userId)
+        const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
         return user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                opportunity?.title.toLowerCase().includes(searchTerm.toLowerCase())
       })
     }
 
     setFilteredApplications(filtered)
-  }, [statusFilter, typeFilter, searchTerm, applications, opportunities, users])
+  }, [statusFilter, typeFilter, searchTerm])
 
   const handleUpdateApplicationStatus = async (applicationId: number, newStatus: 'Pending' | 'Accepted' | 'Rejected') => {
     setIsLoading(true)
@@ -83,12 +83,23 @@ export default function ManageApplications() {
   const handleRefresh = () => {
     setIsLoading(true)
     setTimeout(() => {
+      setApplications(mockApplications)
       setIsLoading(false)
     }, 1000)
   }
 
   const handleExport = () => {
-    console.log('Exporting data...')
+    const exportData = mockApplications.map(app => {
+      const user = mockUsers.find(u => u.id === app.userId)
+      const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
+      return {
+        applicant: user?.name,
+        opportunity: opportunity?.title,
+        status: app.status,
+        appliedAt: app.appliedAt
+      }
+    })
+    console.log('Exporting data:', exportData)
   }
 
   if (!currentUser) {
@@ -100,10 +111,10 @@ export default function ManageApplications() {
   }
 
   const stats = {
-    total: filteredApplications.length,
-    pending: filteredApplications.filter(app => app.status === 'Pending').length,
-    accepted: filteredApplications.filter(app => app.status === 'Accepted').length,
-    rejected: filteredApplications.filter(app => app.status === 'Rejected').length
+    total: mockApplications.length,
+    pending: mockApplications.filter(app => app.status === 'Pending').length,
+    accepted: mockApplications.filter(app => app.status === 'Accepted').length,
+    rejected: mockApplications.filter(app => app.status === 'Rejected').length
   }
 
   return (
@@ -260,8 +271,8 @@ export default function ManageApplications() {
                       <TableBody>
                         <AnimatePresence>
                           {filteredApplications.map((application) => {
-                            const opportunity = opportunities.find(opp => opp.id === application.opportunityId)
-                            const applicant = users.find(user => user.id === application.userId)
+                            const opportunity = mockOpportunities.find(opp => opp.id === application.opportunityId)
+                            const applicant = mockUsers.find(user => user.id === application.userId)
                             return (
                               <motion.tr
                                 key={application.id}

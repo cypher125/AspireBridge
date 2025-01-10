@@ -53,7 +53,7 @@ export default function ManageOpportunities() {
       const form = event.currentTarget
       const formData = new FormData(form)
       const newOpportunity: Opportunity = {
-        id: opportunities.length + 1,
+        id: mockOpportunities.length + 1,
         title: formData.get('title') as string,
         type: formData.get('type') as 'job' | 'scholarship' | 'internship' | 'grant',
         organization: formData.get('organization') as string,
@@ -124,7 +124,7 @@ export default function ManageOpportunities() {
 
   const handleExportData = () => {
     try {
-      const dataStr = JSON.stringify(opportunities, null, 2)
+      const dataStr = JSON.stringify(mockOpportunities, null, 2)
       const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
       const exportFileDefaultName = 'opportunities.json'
       const linkElement = document.createElement('a')
@@ -140,7 +140,8 @@ export default function ManageOpportunities() {
   const handleSync = async () => {
     setIsLoading(true)
     try {
-      // Simulate sync delay
+      // Reset to mock data
+      setOpportunities(mockOpportunities)
       await new Promise(resolve => setTimeout(resolve, 1000))
       toast.success('Data synchronized successfully')
     } catch (error) {
@@ -151,13 +152,13 @@ export default function ManageOpportunities() {
   }
 
   const stats = {
-    total: opportunities.length,
-    active: opportunities.filter(o => o.status === 'Open').length,
-    jobs: opportunities.filter(o => o.type === 'job').length,
-    scholarships: opportunities.filter(o => o.type === 'scholarship').length,
+    total: mockOpportunities.length,
+    active: mockOpportunities.filter(o => o.status === 'Open').length,
+    jobs: mockOpportunities.filter(o => o.type === 'job').length,
+    scholarships: mockOpportunities.filter(o => o.type === 'scholarship').length,
   }
 
-  const filteredOpportunities = opportunities.filter(opp => {
+  const filteredOpportunities = mockOpportunities.filter(opp => {
     const matchesSearch = opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       opp.organization.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === 'all' || opp.type === selectedType
@@ -277,7 +278,7 @@ export default function ManageOpportunities() {
                 <CardContent>
                   <div className="text-xs text-gray-500">
                     <TrendingUp className="inline mr-1 h-3 w-3 text-green-500" />
-                    <span className="text-green-500">↑ 12%</span> from last month
+                    Based on mock data
                   </div>
                 </CardContent>
               </Card>
@@ -290,7 +291,7 @@ export default function ManageOpportunities() {
                 <CardContent>
                   <div className="text-xs text-gray-500">
                     <Users className="inline mr-1 h-3 w-3 text-blue-500" />
-                    Currently accepting applications
+                    From mock data
                   </div>
                 </CardContent>
               </Card>
@@ -303,7 +304,7 @@ export default function ManageOpportunities() {
                 <CardContent>
                   <div className="text-xs text-gray-500">
                     <Briefcase className="inline mr-1 h-3 w-3 text-purple-500" />
-                    Full-time positions available
+                    From mock data
                   </div>
                 </CardContent>
               </Card>
@@ -316,7 +317,7 @@ export default function ManageOpportunities() {
                 <CardContent>
                   <div className="text-xs text-gray-500">
                     <Calendar className="inline mr-1 h-3 w-3 text-orange-500" />
-                    Active scholarship programs
+                    From mock data
                   </div>
                 </CardContent>
               </Card>

@@ -23,10 +23,6 @@ const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444']
 
 export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities)
-  const [applications, setApplications] = useState<Application[]>(mockApplications)
-  const [users, setUsers] = useState<User[]>(mockUsers)
-  const [searchTerm, setSearchTerm] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -43,7 +39,10 @@ export default function AdminDashboard() {
     }
   }, [router])
 
-  const opportunityTypeData = opportunities.reduce((acc, opp) => {
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Calculate stats from mock data
+  const opportunityTypeData = mockOpportunities.reduce((acc, opp) => {
     acc[opp.type] = (acc[opp.type] || 0) + 1
     return acc
   }, {} as Record<string, number>)
@@ -51,10 +50,10 @@ export default function AdminDashboard() {
   const opportunityChartData = Object.entries(opportunityTypeData).map(([type, count]) => ({
     type,
     count,
-    percentage: (count / opportunities.length * 100).toFixed(1)
+    percentage: (count / mockOpportunities.length * 100).toFixed(1)
   }))
 
-  const applicationStatusData = applications.reduce((acc, app) => {
+  const applicationStatusData = mockApplications.reduce((acc, app) => {
     acc[app.status] = (acc[app.status] || 0) + 1
     return acc
   }, {} as Record<string, number>)
@@ -62,31 +61,31 @@ export default function AdminDashboard() {
   const applicationChartData = Object.entries(applicationStatusData).map(([status, count]) => ({
     status,
     count,
-    percentage: (count / applications.length * 100).toFixed(1)
+    percentage: (count / mockApplications.length * 100).toFixed(1)
   }))
 
-  const recentApplications = applications
+  const recentApplications = [...mockApplications]
     .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
     .slice(0, 5)
 
-  const recentUsers = users
+  const recentUsers = [...mockUsers]
     .sort((a, b) => b.id - a.id)
     .slice(0, 5)
 
-  const mostAppliedOpportunities = opportunities
+  const mostAppliedOpportunities = mockOpportunities
     .map(opp => ({
       ...opp,
-      applicationCount: applications.filter(app => app.opportunityId === opp.id).length
+      applicationCount: mockApplications.filter(app => app.opportunityId === opp.id).length
     }))
     .sort((a, b) => b.applicationCount - a.applicationCount)
     .slice(0, 5)
 
-  const weeklyApplications = applications.filter(app => 
+  const weeklyApplications = mockApplications.filter(app => 
     new Date(app.appliedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
   ).length
 
-  const weeklyUsers = users.filter(user =>
-    user.id > users.length - 10 // Simulating weekly new users
+  const weeklyUsers = mockUsers.filter(user =>
+    user.id > mockUsers.length - 10 // Simulating weekly new users
   ).length
 
   if (!currentUser) {
@@ -159,7 +158,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-500">
-                <CountUp end={users.length} duration={2} />
+                <CountUp end={mockUsers.length} duration={2} />
               </div>
               <div className="flex items-center mt-2 text-sm">
                 <ChevronUp className="h-4 w-4 text-green-500 mr-1" />
@@ -176,7 +175,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-500">
-                <CountUp end={opportunities.length} duration={2} />
+                <CountUp end={mockOpportunities.length} duration={2} />
               </div>
               <div className="flex items-center mt-2 text-sm">
                 <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
@@ -192,7 +191,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-500">
-                <CountUp end={applications.length} duration={2} />
+                <CountUp end={mockApplications.length} duration={2} />
               </div>
               <div className="flex items-center mt-2 text-sm">
                 <ChevronUp className="h-4 w-4 text-green-500 mr-1" />
@@ -209,7 +208,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-500">
-                <CountUp end={opportunities.filter(opp => opp.status === 'Open').length} duration={2} />
+                <CountUp end={mockOpportunities.filter(opp => opp.status === 'Open').length} duration={2} />
               </div>
               <div className="flex items-center mt-2 text-sm">
                 <Clock className="h-4 w-4 text-orange-500 mr-1" />

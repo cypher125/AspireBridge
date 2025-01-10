@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Header from '../../../../components/Header'
 import Footer from '../../../../components/Footer'
 import { User, mockUsers } from '../../../../lib/mockUsers'
+import { Application, mockApplications } from '../../../../lib/mockData'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,10 +14,12 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Mail, Phone, Book, FileText, MapPin, Calendar, Shield, Activity, Clock, Edit, Trash2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { format, formatDistanceToNow } from 'date-fns'
 
 export default function UserDetails({ params }: { params: { id: string } }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [userApplications, setUserApplications] = useState<Application[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -36,6 +39,9 @@ export default function UserDetails({ params }: { params: { id: string } }) {
     const foundUser = mockUsers.find(u => u.id === userId)
     if (foundUser) {
       setUser(foundUser)
+      // Get user's applications from mock data
+      const applications = mockApplications.filter(app => app.userId === userId)
+      setUserApplications(applications)
     } else {
       router.push('/admin/users')
     }
@@ -48,6 +54,9 @@ export default function UserDetails({ params }: { params: { id: string } }) {
       </div>
     )
   }
+
+  // Calculate last active time from mock data
+  const lastActive = user.lastActive ? formatDistanceToNow(new Date(user.lastActive), { addSuffix: true }) : 'Unknown'
 
   return (
     <div className="min-h-screen bg-white">
@@ -91,10 +100,10 @@ export default function UserDetails({ params }: { params: { id: string } }) {
                   </Badge>
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                     <Activity className="h-4 w-4" />
-                    <span>Active</span>
+                    <span>{user.status}</span>
                     <span>•</span>
                     <Clock className="h-4 w-4" />
-                    <span>Last seen 2h ago</span>
+                    <span>Last seen {lastActive}</span>
                   </div>
                 </div>
               </CardContent>
@@ -110,18 +119,18 @@ export default function UserDetails({ params }: { params: { id: string } }) {
                     <span className="text-sm text-gray-500">Member Since</span>
                     <Badge variant="outline">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {new Date().toLocaleDateString()}
+                      {format(new Date(user.joinDate), 'MMM d, yyyy')}
                     </Badge>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Applications</span>
-                    <Badge>12</Badge>
+                    <Badge>{userApplications.length}</Badge>
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">Status</span>
-                    <Badge variant="default">Active</Badge>
+                    <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>{user.status}</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -214,7 +223,21 @@ export default function UserDetails({ params }: { params: { id: string } }) {
                     <CardDescription>User's latest actions and updates</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-500">No recent activity to display</p>
+                    {userApplications.length > 0 ? (
+                      <div className="space-y-4">
+                        {userApplications.map(app => (
+                          <div key={app.id} className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Applied to opportunity #{app.opportunityId}</p>
+                              <p className="text-sm text-gray-500">{format(new Date(app.appliedAt), 'PPP')}</p>
+                            </div>
+                            <Badge>{app.status}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No recent activity to display</p>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -226,7 +249,25 @@ export default function UserDetails({ params }: { params: { id: string } }) {
                     <CardDescription>Overview of user's applications</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-500">No applications found</p>
+                    {userApplications.length > 0 ? (
+                      <div className="space-y-4">
+                        {userApplications.map(app => (
+                          <div key={app.id} className="p-4 border rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">Application #{app.id}</p>
+                                <p className="text-sm text-gray-500">Opportunity #{app.opportunityId}</p>
+                              </div>
+                              <Badge variant={app.status === 'Accepted' ? 'default' : app.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                                {app.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No applications found</p>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

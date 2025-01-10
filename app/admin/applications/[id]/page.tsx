@@ -75,7 +75,7 @@ export default function ApplicationDetails({ params }: { params: { id: string } 
 
     setIsLoading(true)
     try {
-      const updatedApplication = await updateApplicationStatus(application.id, newStatus)
+      const updatedApplication = await updateApplicationStatus(application.id, newStatus)[0]
       setApplication(updatedApplication)
       showNotification(`Application status updated to ${newStatus}`)
     } catch (error) {
@@ -123,10 +123,29 @@ export default function ApplicationDetails({ params }: { params: { id: string } 
 
   const applicationTimeline = [
     { date: new Date(application.appliedAt).toLocaleDateString(), event: 'Application Submitted', icon: FileCheck },
-    { date: '2023-10-15', event: 'Documents Verified', icon: CheckCircle },
-    { date: '2023-10-16', event: 'Under Review', icon: MessageSquare },
-    { date: '2023-10-18', event: application.status, icon: Award },
+    { date: new Date(application.appliedAt).toLocaleDateString(), event: 'Documents Verified', icon: CheckCircle },
+    { date: new Date(application.updatedAt || application.appliedAt).toLocaleDateString(), event: 'Under Review', icon: MessageSquare },
+    { date: new Date(application.updatedAt || application.appliedAt).toLocaleDateString(), event: application.status, icon: Award },
   ]
+
+  // Calculate qualification match based on mock data
+  const calculateQualificationMatch = () => {
+    const requiredSkills = opportunity.requirements?.length || 0
+    const matchedSkills = opportunity.requirements?.filter(req => 
+      applicant.skills?.some(skill => req.toLowerCase().includes(skill.toLowerCase()))
+    ).length || 0
+    return Math.round((matchedSkills / requiredSkills) * 100)
+  }
+
+  // Calculate experience level based on mock data
+  const calculateExperienceLevel = () => {
+    const requiredYears = opportunity.experienceRequired || 1
+    const applicantYears = applicant.yearOfStudy || 1
+    return Math.min(Math.round((applicantYears / requiredYears) * 100), 100)
+  }
+
+  const qualificationMatch = calculateQualificationMatch()
+  const experienceLevel = calculateExperienceLevel()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -394,7 +413,7 @@ export default function ApplicationDetails({ params }: { params: { id: string } 
                             <UserIcon className="mr-3 h-4 w-4 text-gray-500" />
                             <div>
                               <p className="text-sm text-gray-500">Total Applicants</p>
-                              <p>{opportunity.totalApplicants || 'Not available'}</p>
+                              <p>{mockApplications.filter(app => app.opportunityId === opportunity.id).length}</p>
                             </div>
                           </div>
                         </div>
@@ -469,16 +488,16 @@ export default function ApplicationDetails({ params }: { params: { id: string } 
                           <div className="space-y-2">
                             <p className="font-medium">Qualifications Match</p>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                              <div className="bg-primary h-2.5 rounded-full" style={{ width: '85%' }}></div>
+                              <div className="bg-primary h-2.5 rounded-full" style={{ width: `${qualificationMatch}%` }}></div>
                             </div>
-                            <p className="text-sm text-gray-500">85% match with requirements</p>
+                            <p className="text-sm text-gray-500">{qualificationMatch}% match with requirements</p>
                           </div>
                           <div className="space-y-2">
                             <p className="font-medium">Experience Level</p>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                              <div className="bg-primary h-2.5 rounded-full" style={{ width: '70%' }}></div>
+                              <div className="bg-primary h-2.5 rounded-full" style={{ width: `${experienceLevel}%` }}></div>
                             </div>
-                            <p className="text-sm text-gray-500">70% relevant experience</p>
+                            <p className="text-sm text-gray-500">{experienceLevel}% relevant experience</p>
                           </div>
                         </div>
 
@@ -489,6 +508,7 @@ export default function ApplicationDetails({ params }: { params: { id: string } 
                           <textarea 
                             className="w-full h-32 p-3 border rounded-md resize-none" 
                             placeholder="Add evaluation notes here..."
+                            defaultValue={application.evaluationNotes || ''}
                           />
                         </div>
 
