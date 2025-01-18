@@ -6,15 +6,15 @@ import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import { User, mockUsers } from '../../lib/mockUsers'
-import { Opportunity, Application, mockOpportunities, mockApplications } from '../../lib/mockData'
+import { mockOpportunities, mockApplications } from '../../lib/mockData'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import {  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion} from 'framer-motion'
 import CountUp from 'react-countup'
-import { Users, Briefcase, FileText, Bell, TrendingUp, ChevronUp, ChevronDown, Calendar, Clock, Settings, Search } from 'lucide-react'
+import { Users, Briefcase, FileText, Bell, TrendingUp, ChevronUp, Calendar, Clock} from 'lucide-react'
 import { GradientBackground } from '../../components/GradientBackground'
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
         >
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, {currentUser.name}</h1>
-            <p className="text-gray-600">Here's what's happening with your platform today</p>
+            <p className="text-gray-600">Here&apos;s what&apos;s happening with your platform today</p>
           </div>
           <div className="flex flex-wrap gap-4">
             <Link href="/admin/opportunities">
