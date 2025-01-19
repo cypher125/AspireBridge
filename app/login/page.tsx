@@ -5,35 +5,59 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
-import { authenticateUser, User } from '../../lib/mockUsers'
 import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GradientBackground } from '../../components/GradientBackground'
-import { FiLock, FiMail, FiUser, FiShield, FiAward, FiBookOpen, FiGlobe } from 'react-icons/fi'
+import { FiLock, FiMail, FiShield, FiAward, FiBookOpen, FiGlobe, FiAlertCircle } from 'react-icons/fi'
 import Image from 'next/image'
+import { authApi } from '@/lib/api/auth'
+import { useAuthStore } from '@/hooks/useAuth'
+import { toast } from '@/hooks/use-toast'
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const AnimatedButton = motion(Button);
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const setAuth = useAuthStore((state) => state.setAuth)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const user = authenticateUser(email, password)
-    if (user) {
-      localStorage.setItem('currentUser', JSON.stringify(user))
-      if (user.role === 'admin') {
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const response = await authApi.login({ email, password })
+      setAuth({
+        accessToken: response.access,
+        refreshToken: response.refresh,
+        user: response.user
+      })
+      
+      const role = response.user?.role?.toLowerCase()
+      if (role === 'administrator') {
         router.push('/admin')
       } else {
         router.push('/dashboard')
       }
-    } else {
-      setError('Invalid email or password')
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          "Invalid email or password"
+      setError(errorMessage)
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -45,7 +69,7 @@ export default function Login() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
       <Header />
       <GradientBackground />
       <main className="container mx-auto px-4 py-8 relative">
@@ -131,17 +155,10 @@ export default function Login() {
               </motion.div>
 
               {error && (
-                <motion.div
-                  className="bg-red-50 text-red-500 p-4 rounded-lg mb-6"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <p className="flex items-center">
-                    <FiShield className="w-5 h-5 mr-2" />
-                    {error}
-                  </p>
-                </motion.div>
+                <Alert variant="destructive" className="mb-6">
+                  <FiAlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
               <motion.form
@@ -197,8 +214,9 @@ export default function Login() {
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  disabled={isLoading}
                 >
-                  Sign In
+                  {isLoading ? 'Signing in...' : 'Sign In'}
                 </AnimatedButton>
               </motion.form>
 
@@ -233,7 +251,7 @@ export default function Login() {
               transition={{ duration: 0.5, delay: 0.6 }}
             >
               <p className="text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/register" className="text-blue-600 hover:text-blue-500 font-semibold">
                   Create Account
                 </Link>

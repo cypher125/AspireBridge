@@ -1,27 +1,53 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { use } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '../../../components/Header'
 import Footer from '../../../components/Footer'
-import { User, mockUsers } from '../../../lib/mockUsers'
-import { Opportunity, Application, mockOpportunities, mockApplications } from '../../../lib/mockData'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Calendar, Building, FileText, CheckCircle, XCircle, Phone, MapPin, DollarSign, Clock, Users, Share2, BookmarkPlus, Send } from 'lucide-react'
+import { MapPin,  DollarSign, Building, ArrowLeft, Share2, BookmarkPlus, Send, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { useAuthStore } from '@/hooks/useAuth'
+import apiClient from '@/lib/api'
+import { toast } from '@/hooks/use-toast'
 
-export default function OpportunityPage({ params }: { params: { id: string } }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
+interface Opportunity {
+  id: string
+  title: string
+  description: string
+  organization: string
+  location: string
+  type: string
+  status: string
+  funding?: string
+  deadline: string
+  is_saved: boolean
+  requirements?: string | string[]
+  benefits?: string | string[]
+  timeCommitment?: string
+}
+
+interface OpportunityPageProps {
+  params: Promise<{ id: string }>
+}
+
+export default function OpportunityPage({ params }: OpportunityPageProps) {
+  const { id } = use(params)
+  const router = useRouter()
+  const { user } = useAuthStore()
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isApplying, setIsApplying] = useState(false)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [hasApplied, setHasApplied] = useState(false)
   const [applicationData, setApplicationData] = useState({
     name: '',
     email: '',
@@ -29,87 +55,190 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
     coverLetter: '',
     resume: null as File | null,
   })
-  const [userApplication, setUserApplication] = useState<Application | null>(null)
-  const [isBookmarked, setIsBookmarked] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser')
-    if (userJson) {
-      const user = JSON.parse(userJson) as User
-      if (user.role === 'student') {
-        setCurrentUser(user)
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    const fetchOpportunity = async () => {
+      try {
+        const response = await apiClient.get(`/api/opportunities/opportunities/${id}/`)
+        setOpportunity(response.data)
+        setIsBookmarked(response.data.is_saved)
+        setHasApplied(response.data.has_applied)
         setApplicationData(prevData => ({
           ...prevData,
-          name: user.name,
-          email: user.email,
-          phoneNumber: user.phoneNumber || '',
+          name: user.name || '',
+          email: user.email || '',
+          phoneNumber: user.phone_number || '',
         }))
-      } else {
-        router.push('/login')
+      } catch (error) {
+        console.error('Error fetching opportunity:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load opportunity details. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
       }
-    } else {
-      router.push('/login')
     }
 
-    const foundOpportunity = mockOpportunities.find(opp => opp.id === parseInt(params.id))
-    if (foundOpportunity) {
-      setOpportunity(foundOpportunity)
-    } else {
-      router.push('/dashboard')
-    }
-
-    const foundApplication = mockApplications.find(
-      app => app.userId === JSON.parse(userJson || '{}').id && app.opportunityId === parseInt(params.id)
-    )
-    if (foundApplication) {
-      setUserApplication(foundApplication)
-    }
-  }, [params.id, router])
-
-  const handleApply = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newApplication: Application = {
-      id: mockApplications.length + 1,
-      userId: currentUser!.id,
-      opportunityId: opportunity!.id,
-      status: 'Pending',
-      appliedAt: new Date().toISOString(),
-      coverLetter: applicationData.coverLetter,
-      updatedAt: new Date().toISOString(),
-      documents: applicationData.resume ? [{ 
-        name: applicationData.resume.name,
-        url: URL.createObjectURL(applicationData.resume)
-      }] : []
-    }
-    mockApplications.push(newApplication)
-    setUserApplication(newApplication)
-    setIsApplying(false)
-    alert('Application submitted successfully!')
-  }
+    fetchOpportunity()
+  }, [id, router, user])
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
-    alert('Link copied to clipboard!')
+    toast({
+      title: "Success",
+      description: "Link copied to clipboard!",
+    })
   }
 
-  if (!currentUser || !opportunity) {
+  const handleBookmark = async () => {
+    try {
+      await apiClient.post(`/api/opportunities/opportunities/${id}/toggle_save/`)
+      setIsBookmarked(!isBookmarked)
+      toast({
+        title: isBookmarked ? "Removed from saved" : "Added to saved",
+        description: isBookmarked ? "Opportunity removed from your saved items" : "Opportunity added to your saved items",
+      })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update saved status. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleApply = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      // Validate file size
+      if (applicationData.resume && applicationData.resume.size > 10 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Resume file size must be less than 10MB",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Validate file type
+      if (applicationData.resume) {
+        const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+        if (!allowedTypes.includes(applicationData.resume.type)) {
+          toast({
+            title: "Error",
+            description: "Only PDF and Word documents are allowed",
+            variant: "destructive",
+          })
+          return
+        }
+      }
+
+      const formData = new FormData()
+      formData.append('opportunity', id)
+      formData.append('cover_letter', applicationData.coverLetter)
+      formData.append('name', applicationData.name)
+      formData.append('email', applicationData.email)
+      formData.append('phone_number', applicationData.phoneNumber)
+      
+      if (applicationData.resume) {
+        formData.append('resume', applicationData.resume)
+      }
+
+      await apiClient.post('/api/applications/applications/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      setIsApplying(false)
+      setHasApplied(true)
+      toast({
+        title: "Success",
+        description: "Application submitted successfully!",
+      })
+      router.refresh()
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string, error?: string } } }
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || "Failed to submit application. Please try again."
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (isLoading || !opportunity) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
         <p className="mt-4 text-gray-600">Loading opportunity details...</p>
       </div>
     )
   }
 
-  const daysLeft = Math.ceil((new Date(opportunity.deadline).getTime() - new Date().getTime()) / (1000 * 3600 * 24))
-  const progressValue = (daysLeft / 30) * 100 // Assuming 30 days is full period
-  
-  // Calculate total applicants from mock data
-  const totalApplicants = mockApplications.filter(app => app.opportunityId === opportunity.id).length
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Date not available'
+      }
+      return format(date, 'MMM d, yyyy')
+    } catch {
+      return 'Date not available'
+    }
+  }
+
+  const calculateDaysLeft = (deadline: string) => {
+    try {
+      const deadlineDate = new Date(deadline)
+      if (isNaN(deadlineDate.getTime())) {
+        return { daysLeft: 0, progressValue: 0 }
+      }
+      const daysLeft = Math.ceil((deadlineDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24))
+      const progressValue = Math.max(0, Math.min(100, (daysLeft / 30) * 100))
+      return { daysLeft, progressValue }
+    } catch {
+      return { daysLeft: 0, progressValue: 0 }
+    }
+  }
+
+  const { daysLeft, progressValue } = calculateDaysLeft(opportunity.deadline)
+
+  const parseStringToArray = (value: string | string[] | undefined): string[] => {
+    if (!value) return []
+    if (Array.isArray(value)) return value
+    try {
+      // First try to parse as JSON
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+      
+      // If it's a string, split by newlines and/or hyphens
+      const str = parsed.toString() || value.toString()
+      return str
+        .split(/[\n\r]+|-/)  // Split by newlines or hyphens
+        .map((item: string) => item.trim())  // Trim whitespace
+        .filter((item: string) => item.length > 0)  // Remove empty items
+    } catch {
+      // If JSON parsing fails, treat as string and split by newlines and/or hyphens
+      return value
+        .toString()
+        .split(/[\n\r]+|-/)
+        .map((item: string) => item.trim())
+        .filter((item: string) => item.length > 0)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
       <Header />
       <motion.main 
         className="container mx-auto px-4 py-8"
@@ -135,7 +264,7 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
               <Button variant="outline" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" /> Share
               </Button>
-              <Button variant="outline" onClick={() => setIsBookmarked(!isBookmarked)}>
+              <Button variant="outline" onClick={handleBookmark}>
                 <BookmarkPlus className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-current' : ''}`} />
                 {isBookmarked ? 'Saved' : 'Save'}
               </Button>
@@ -154,7 +283,7 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                   <Badge variant="outline" className="text-sm capitalize">
                     {opportunity.type}
                   </Badge>
-                  <Badge variant={opportunity.status === 'Open' ? 'success' : 'destructive'}>
+                  <Badge variant={opportunity.status.toLowerCase() === 'active' ? 'success' : 'destructive'}>
                     {opportunity.status}
                   </Badge>
                 </div>
@@ -181,7 +310,7 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
               <div className="flex flex-col items-end">
                 <div className="text-right mb-2">
                   <p className="text-sm text-gray-500">Application Deadline</p>
-                  <p className="text-lg font-semibold">{format(new Date(opportunity.deadline), 'MMM d, yyyy')}</p>
+                  <p className="text-lg font-semibold">{formatDate(opportunity.deadline)}</p>
                 </div>
                 <div className="w-full max-w-[200px]">
                   <Progress value={progressValue} className="h-2" />
@@ -202,7 +331,6 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                 <TabsList className="w-full justify-start mb-6">
                   <TabsTrigger value="about">About</TabsTrigger>
                   <TabsTrigger value="requirements">Requirements</TabsTrigger>
-                  <TabsTrigger value="criteria">Selection Criteria</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="about">
@@ -210,21 +338,17 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                     <CardHeader>
                       <CardTitle>About this Opportunity</CardTitle>
                     </CardHeader>
-                    <CardContent className="prose max-w-none">
-                      <p className="text-gray-700 leading-relaxed">{opportunity.description}</p>
-                      
-                      <div className="mt-6 grid grid-cols-2 gap-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <Users className="h-5 w-5 text-gray-600 mb-2" />
-                          <p className="text-sm text-gray-600">Total Applicants</p>
-                          <p className="text-xl font-semibold">{totalApplicants}</p>
+                    <CardContent className="prose max-w-none space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">About the Role</h3>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{opportunity.description}</p>
                         </div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <Clock className="h-5 w-5 text-gray-600 mb-2" />
-                          <p className="text-sm text-gray-600">Time Commitment</p>
-                          <p className="text-xl font-semibold">{opportunity.timeCommitment || 'Full Time'}</p>
+                      {opportunity.funding && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Salary Range</h3>
+                          <p className="text-gray-700">{opportunity.funding}</p>
                         </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -235,9 +359,17 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                       <CardTitle>Requirements</CardTitle>
                       <CardDescription>What you need to be eligible</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4">Eligibility Requirements</h3>
+                        {opportunity.requirements ? (
                       <ul className="space-y-4">
-                        {opportunity.requirements.map((req, index) => (
+                            {opportunity.requirements
+                              .toString()
+                              .split(/[\n\r]+|-/)
+                              .map(item => item.trim())
+                              .filter(item => item.length > 0)
+                              .map((req, index) => (
                           <motion.li 
                             key={index}
                             className="flex items-start bg-gray-50 p-4 rounded-lg"
@@ -250,19 +382,21 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                           </motion.li>
                         ))}
                       </ul>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                        ) : (
+                          <p className="text-gray-500">No specific requirements listed.</p>
+                        )}
+                      </div>
 
-                <TabsContent value="criteria">
-                  <Card className="bg-white shadow-sm border-gray-100">
-                    <CardHeader>
-                      <CardTitle>Selection Criteria</CardTitle>
-                      <CardDescription>How applications will be evaluated</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                      {opportunity.benefits && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-4">Benefits & Perks</h3>
                       <ul className="space-y-4">
-                        {opportunity.criteria.map((criterion, index) => (
+                            {opportunity.benefits
+                              .toString()
+                              .split(/[\n\r]+|-/)
+                              .map(item => item.trim())
+                              .filter(item => item.length > 0)
+                              .map((benefit, index) => (
                           <motion.li 
                             key={index}
                             className="flex items-start bg-gray-50 p-4 rounded-lg"
@@ -271,10 +405,24 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                             transition={{ duration: 0.5, delay: 0.1 * index }}
                           >
                             <CheckCircle className="h-5 w-5 mr-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <span className="text-gray-700">{criterion}</span>
+                                  <span className="text-gray-700">{benefit}</span>
                           </motion.li>
                         ))}
                       </ul>
+                        </div>
+                      )}
+
+                      {opportunity.funding && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Compensation</h3>
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="flex items-center">
+                              <DollarSign className="h-5 w-5 mr-3 text-blue-500" />
+                              <span className="text-gray-700">{opportunity.funding}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -291,7 +439,14 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                   <CardTitle>Application Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {opportunity.status === 'Open' && !userApplication && !isApplying && (
+                  {opportunity.status.toLowerCase() === 'active' ? (
+                    hasApplied ? (
+                      <div className="text-center">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                        <p className="text-lg font-medium text-gray-900">Application Submitted</p>
+                        <p className="text-sm text-gray-500 mt-1">You have already applied for this opportunity</p>
+                      </div>
+                    ) : (
                     <Button
                       onClick={() => setIsApplying(true)}
                       className="w-full"
@@ -299,33 +454,11 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
                     >
                       <Send className="mr-2 h-4 w-4" /> Apply Now
                     </Button>
-                  )}
-
-                  {userApplication && (
-                    <div className="space-y-4">
-                      <div className={`p-6 rounded-lg ${
-                        userApplication.status === 'Pending' ? 'bg-yellow-50 border border-yellow-200' :
-                        userApplication.status === 'Accepted' ? 'bg-green-50 border border-green-200' :
-                        'bg-red-50 border border-red-200'
-                      }`}>
-                        <h3 className="font-semibold mb-3">Application Status</h3>
-                        <div className="flex items-center">
-                          {userApplication.status === 'Pending' ? (
-                            <Clock className="h-5 w-5 mr-2 text-yellow-600" />
-                          ) : userApplication.status === 'Accepted' ? (
-                            <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-                          ) : (
-                            <XCircle className="h-5 w-5 mr-2 text-red-600" />
-                          )}
-                          <span className="font-medium">{userApplication.status}</span>
-                        </div>
-                        <div className="mt-4 text-sm">
-                          <p>Applied on: {format(new Date(userApplication.appliedAt), 'MMMM d, yyyy')}</p>
-                          {userApplication.updatedAt && (
-                            <p>Last updated: {format(new Date(userApplication.updatedAt), 'MMMM d, yyyy')}</p>
-                          )}
-                        </div>
-                      </div>
+                    )
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-lg font-medium text-gray-900">Not Accepting Applications</p>
+                      <p className="text-sm text-gray-500 mt-1">This opportunity is no longer active</p>
                     </div>
                   )}
                 </CardContent>
@@ -434,4 +567,17 @@ export default function OpportunityPage({ params }: { params: { id: string } }) 
       <Footer />
     </div>
   )
+}
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'bg-green-100 text-green-800'
+    case 'closed':
+      return 'bg-red-100 text-red-800'
+    case 'draft':
+      return 'bg-yellow-100 text-yellow-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
 }

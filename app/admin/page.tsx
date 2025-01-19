@@ -9,37 +9,47 @@ import { User, mockUsers } from '../../lib/mockUsers'
 import { mockOpportunities, mockApplications } from '../../lib/mockData'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { motion} from 'framer-motion'
+import { motion } from 'framer-motion'
 import CountUp from 'react-countup'
-import { Users, Briefcase, FileText, Bell, TrendingUp, ChevronUp, Calendar, Clock} from 'lucide-react'
+import { Users, Briefcase, FileText, Bell, TrendingUp, ChevronUp, Calendar, Clock } from 'lucide-react'
 import { GradientBackground } from '../../components/GradientBackground'
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useAuthStore } from '@/hooks/useAuth'
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444']
 
 export default function AdminDashboard() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const router = useRouter()
+  const { user, isAuthenticated, isAdmin } = useAuthStore()
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    const userJson = localStorage.getItem('currentUser')
-    if (userJson) {
-      const user = JSON.parse(userJson) as User
-      if (user.role === 'admin') {
-        setCurrentUser(user)
-      } else {
-        router.push('/login')
-      }
-    } else {
-      router.push('/login')
-    }
-  }, [router])
+    const checkAuth = async () => {
+      await new Promise(resolve => setTimeout(resolve, 100))
 
-  const [searchTerm, setSearchTerm] = useState('')
+      if (!isAuthenticated()) {
+        console.log('Not authenticated, redirecting to login')
+        window.location.replace(`${window.location.origin}/login`)
+        return
+      }
+
+      if (!isAdmin()) {
+        console.log('Not admin, redirecting to dashboard')
+        window.location.replace(`${window.location.origin}/dashboard`)
+        return
+      }
+
+      console.log('Admin access confirmed:', user)
+      setIsLoading(false)
+    }
+
+    checkAuth()
+  }, [isAuthenticated, isAdmin, user])
 
   // Calculate stats from mock data
   const opportunityTypeData = mockOpportunities.reduce((acc, opp) => {
@@ -47,6 +57,16 @@ export default function AdminDashboard() {
     return acc
   }, {} as Record<string, number>)
 
+  // Calculate weekly stats
+  const weeklyUsers = mockUsers.filter(user =>
+    user.id > mockUsers.length - 10 // Simulating weekly new users
+  ).length
+
+  const weeklyApplications = mockApplications.filter(app => 
+    new Date(app.appliedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
+  ).length
+
+  // Calculate chart data
   const opportunityChartData = Object.entries(opportunityTypeData).map(([type, count]) => ({
     type,
     count,
@@ -64,14 +84,7 @@ export default function AdminDashboard() {
     percentage: (count / mockApplications.length * 100).toFixed(1)
   }))
 
-  const recentApplications = [...mockApplications]
-    .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
-    .slice(0, 5)
-
-  const recentUsers = [...mockUsers]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 5)
-
+  // Calculate most applied opportunities
   const mostAppliedOpportunities = mockOpportunities
     .map(opp => ({
       ...opp,
@@ -80,15 +93,16 @@ export default function AdminDashboard() {
     .sort((a, b) => b.applicationCount - a.applicationCount)
     .slice(0, 5)
 
-  const weeklyApplications = mockApplications.filter(app => 
-    new Date(app.appliedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
-  ).length
+  // Get recent applications and users
+  const recentApplications = [...mockApplications]
+    .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+    .slice(0, 5)
 
-  const weeklyUsers = mockUsers.filter(user =>
-    user.id > mockUsers.length - 10 // Simulating weekly new users
-  ).length
+  const recentUsers = [...mockUsers]
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 5)
 
-  if (!currentUser) {
+  if (isLoading) {
     return (
       <motion.div 
         className="flex items-center justify-center h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50"
@@ -103,6 +117,11 @@ export default function AdminDashboard() {
     )
   }
 
+  if (!user || !isAdmin()) {
+    return null
+  }
+
+  // Your existing JSX remains the same, just update the user reference
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Header />
@@ -120,7 +139,7 @@ export default function AdminDashboard() {
           transition={{ duration: 0.6 }}
         >
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, {currentUser.name}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome back, {user.first_name}</h1>
             <p className="text-gray-600">Here&apos;s what&apos;s happening with your platform today</p>
           </div>
           <div className="flex flex-wrap gap-4">

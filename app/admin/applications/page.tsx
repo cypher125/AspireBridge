@@ -1,345 +1,150 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Header from '../../../components/Header'
-import Footer from '../../../components/Footer'
-import { User, mockUsers } from '../../../lib/mockUsers'
-import { Application, Opportunity, mockApplications, mockOpportunities, updateApplicationStatus } from '../../../lib/mockData'
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Filter, Eye, CheckCircle, XCircle, ArrowLeft, Download, RefreshCw, Users, Clock, CheckSquare, XSquare } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from 'react';
+import { useApplications, useUpdateApplicationStatus, useBulkUpdateApplicationStatus, useApplicationStats } from '@/hooks/useApplications';
+import { Application } from '@/lib/api/applications';
+import { toast } from '@/components/ui/use-toast';
+import Header from '@/components/Header';
+import { motion } from 'framer-motion';
+import { Search, Plus, Edit, Trash2, Filter } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, Badge } from '@/components/ui/card';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 export default function ManageApplications() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [applications, setApplications] = useState<Application[]>(mockApplications)
-  const [opportunities] = useState<Opportunity[]>(mockOpportunities)
-  const [users] = useState<User[]>(mockUsers)
-  const [filteredApplications, setFilteredApplications] = useState<Application[]>(mockApplications)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [searchTerm, setSearchTerm] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => {
-    const userJson = localStorage.getItem('currentUser')
-    if (userJson) {
-      const user = JSON.parse(userJson) as User
-      if (user.role === 'admin') {
-        setCurrentUser(user)
-      } else {
-        router.push('/login')
-      }
-    } else {
-      router.push('/login')
-    }
-  }, [router])
+  const { data: applications, isLoading } = useApplications();
+  const { data: stats } = useApplicationStats();
+  const updateStatus = useUpdateApplicationStatus();
+  const bulkUpdateStatus = useBulkUpdateApplicationStatus();
 
-  useEffect(() => {
-    let filtered = mockApplications
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(app => app.status === statusFilter)
-    }
-
-    if (typeFilter !== 'all') {
-      filtered = filtered.filter(app => {
-        const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
-        return opportunity?.type === typeFilter
-      })
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(app => {
-        const user = mockUsers.find(u => u.id === app.userId)
-        const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
-        return user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               opportunity?.title.toLowerCase().includes(searchTerm.toLowerCase())
-      })
-    }
-
-    setFilteredApplications(filtered)
-  }, [statusFilter, typeFilter, searchTerm])
-
-  const handleUpdateApplicationStatus = async (applicationId: number, newStatus: 'Pending' | 'Accepted' | 'Rejected') => {
-    setIsLoading(true)
+  const handleUpdateStatus = async (id: number, status: Application['status']) => {
     try {
-      const updatedApplications = updateApplicationStatus(applicationId, newStatus)
-      setApplications(updatedApplications)
-    } finally {
-      setIsLoading(false)
+      await updateStatus.mutateAsync({ id, status });
+      toast({
+        title: 'Success',
+        description: 'Application status updated successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update application status',
+        variant: 'destructive',
+      });
     }
-  }
+  };
 
-  const handleRefresh = () => {
-    setIsLoading(true)
-    setTimeout(() => {
-      setApplications(mockApplications)
-      setIsLoading(false)
-    }, 1000)
-  }
+  const handleBulkUpdate = async (status: Application['status']) => {
+    if (selectedIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select applications to update',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  const handleExport = () => {
-    const exportData = mockApplications.map(app => {
-      const user = mockUsers.find(u => u.id === app.userId)
-      const opportunity = mockOpportunities.find(opp => opp.id === app.opportunityId)
-      return {
-        applicant: user?.name,
-        opportunity: opportunity?.title,
-        status: app.status,
-        appliedAt: app.appliedAt
-      }
-    })
-    console.log('Exporting data:', exportData)
-  }
+    try {
+      await bulkUpdateStatus.mutateAsync({ ids: selectedIds, status });
+      setSelectedIds([]);
+      toast({
+        title: 'Success',
+        description: 'Applications updated successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update applications',
+        variant: 'destructive',
+      });
+    }
+  };
 
-  if (!currentUser) {
+  const filteredApplications = applications?.filter(app => {
+    const matchesSearch = app.user.toString().includes(searchTerm) ||
+      app.opportunity.toString().includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
-    )
-  }
-
-  const stats = {
-    total: mockApplications.length,
-    pending: mockApplications.filter(app => app.status === 'Pending').length,
-    accepted: mockApplications.filter(app => app.status === 'Accepted').length,
-    rejected: mockApplications.filter(app => app.status === 'Rejected').length
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col space-y-4 md:flex-row md:justify-between md:space-y-0"
-          >
-            <div>
-              <Button
-                onClick={() => router.back()}
-                variant="ghost"
-                size="sm"
-                className="mb-2 hover:bg-white/50"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-              </Button>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                Application Management
-              </h1>
-              <p className="text-gray-500 mt-2">Track and process applications efficiently</p>
-            </div>
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0">
-              <Button 
-                variant="outline" 
-                onClick={handleRefresh} 
-                disabled={isLoading}
-                className="bg-white/50 backdrop-blur-sm hover:bg-white/80"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleExport}
-                className="bg-white/50 backdrop-blur-sm hover:bg-white/80"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                  <Users className="mr-2 h-4 w-4" />
-                  Total Applications
-                </CardTitle>
-                <CardDescription className="text-3xl font-bold text-primary">{stats.total}</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                  <Clock className="mr-2 h-4 w-4" />
-                  Pending
-                </CardTitle>
-                <CardDescription className="text-3xl font-bold text-yellow-600">{stats.pending}</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                  <CheckSquare className="mr-2 h-4 w-4" />
-                  Accepted
-                </CardTitle>
-                <CardDescription className="text-3xl font-bold text-green-600">{stats.accepted}</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg hover:shadow-xl transition-all">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                  <XSquare className="mr-2 h-4 w-4" />
-                  Rejected
-                </CardTitle>
-                <CardDescription className="text-3xl font-bold text-red-600">{stats.rejected}</CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card className="bg-white/50 backdrop-blur-sm border-none shadow-lg">
+        <div className="max-w-7xl mx-auto">
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                  Applications Overview
-                </CardTitle>
-                <CardDescription>Comprehensive view of all submitted applications</CardDescription>
+                <CardTitle>Total Applications</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
+                <div className="text-2xl font-bold">{stats?.total || 0}</div>
+              </CardContent>
+            </Card>
+            {/* Add more stat cards */}
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
                     <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <Input
-                        type="text"
-                        placeholder="Search by applicant or opportunity..."
+                placeholder="Search applications..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-white/50 backdrop-blur-sm"
+                className="pl-10"
                       />
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     </div>
-                    <Select onValueChange={setStatusFilter} defaultValue={statusFilter}>
-                      <SelectTrigger className="w-full md:w-[200px] bg-white/50 backdrop-blur-sm">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Accepted">Accepted</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select onValueChange={setTypeFilter} defaultValue={typeFilter}>
-                      <SelectTrigger className="w-full md:w-[200px] bg-white/50 backdrop-blur-sm">
-                        <SelectValue placeholder="Filter by type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="job">Job</SelectItem>
-                        <SelectItem value="internship">Internship</SelectItem>
-                        <SelectItem value="scholarship">Scholarship</SelectItem>
-                        <SelectItem value="grant">Grant</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="rounded-lg border bg-white/50 backdrop-blur-sm overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="font-semibold">Applicant</TableHead>
-                          <TableHead className="font-semibold">Opportunity</TableHead>
-                          <TableHead className="font-semibold">Status</TableHead>
-                          <TableHead className="hidden md:table-cell font-semibold">Applied At</TableHead>
-                          <TableHead className="font-semibold">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <AnimatePresence>
-                          {filteredApplications.map((application) => {
-                            const opportunity = mockOpportunities.find(opp => opp.id === application.opportunityId)
-                            const applicant = mockUsers.find(user => user.id === application.userId)
-                            return (
-                              <motion.tr
-                                key={application.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="hover:bg-white/80"
-                              >
-                                <TableCell className="font-medium">{applicant?.name}</TableCell>
-                                <TableCell>{opportunity?.title}</TableCell>
-                                <TableCell>
-                                  <Badge variant={
-                                    application.status === 'Pending' ? 'secondary' :
-                                    application.status === 'Accepted' ? 'default' :
-                                    'destructive'
-                                  } className="font-semibold">
-                                    {application.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell text-gray-500">
-                                  {application.appliedAt}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
-                                    <Link href={`/admin/applications/${application.id}`}>
-                                      <Button variant="outline" size="sm" className="w-full sm:w-auto bg-white/50 hover:bg-white">
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View
-                                      </Button>
-                                    </Link>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full sm:w-auto bg-white/50 hover:bg-green-50 hover:text-green-600 hover:border-green-200"
-                                      onClick={() => handleUpdateApplicationStatus(application.id, 'Accepted')}
-                                      disabled={isLoading}
-                                    >
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Accept
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-full sm:w-auto bg-white/50 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                                      onClick={() => handleUpdateApplicationStatus(application.id, 'Rejected')}
-                                      disabled={isLoading}
-                                    >
-                                      <XCircle className="mr-2 h-4 w-4" />
-                                      Reject
-                                    </Button>
+          {/* Applications List */}
+          <div className="space-y-4">
+            {filteredApplications?.map((application) => (
+              <Card key={application.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Application #{application.id}</CardTitle>
+                      <CardDescription>
+                        Applied on: {new Date(application.applied_at).toLocaleDateString()}
+                      </CardDescription>
                                   </div>
-                                </TableCell>
-                              </motion.tr>
-                            )
-                          })}
-                        </AnimatePresence>
-                      </TableBody>
-                    </Table>
+                    <Badge>{application.status}</Badge>
                   </div>
-                </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Add application details */}
               </CardContent>
             </Card>
-          </motion.div>
+            ))}
+          </div>
         </div>
       </main>
-      <Footer />
     </div>
-  )
+  );
 }
